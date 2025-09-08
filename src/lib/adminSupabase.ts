@@ -129,6 +129,46 @@ export const deleteProjectAudio = async (audioId: string): Promise<void> => {
   if (error) throw error;
 };
 
+// Update image order in database
+export const updateImageOrder = async (imageId: string, newOrder: number): Promise<void> => {
+  const { error } = await supabase
+    .from('project_images')
+    .update({ display_order: newOrder })
+    .eq('id', imageId);
+
+  if (error) throw error;
+};
+
+// Update audio order in database
+export const updateAudioOrder = async (audioId: string, newOrder: number): Promise<void> => {
+  const { error } = await supabase
+    .from('project_audio')
+    .update({ display_order: newOrder })
+    .eq('id', audioId);
+
+  if (error) throw error;
+};
+
+// Get project with fresh media data
+export const getProjectMedia = async (projectId: string): Promise<{ images: any[], audios: any[] }> => {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      images:project_images(*),
+      audios:project_audio(*)
+    `)
+    .eq('id', projectId)
+    .single();
+
+  if (error) throw error;
+
+  // Sort by display_order
+  const images = (data?.images || []).sort((a: any, b: any) => a.display_order - b.display_order);
+  const audios = (data?.audios || []).sort((a: any, b: any) => a.display_order - b.display_order);
+
+  return { images, audios };
+};
+
 // Enhanced project CRUD with better error handling
 export const createProjectAdmin = async (projectData: CreateProjectData): Promise<{ project: Project, success: boolean, error?: string }> => {
   try {

@@ -182,3 +182,40 @@ export const getSignedUrl = async (storageUrl: string, bucket: string = 'images'
   // Return original URL if conversion fails
   return storageUrl;
 };
+
+// Get latest project thumbnail for each category
+export const getLatestProjectThumbnails = async (): Promise<{ [categorySlug: string]: string }> => {
+  const { data: categories, error: catError } = await supabase
+    .from('categories')
+    .select('id, slug');
+  
+  if (catError || !categories) return {};
+  
+  const thumbnails: { [categorySlug: string]: string } = {};
+  
+  for (const category of categories) {
+    // Get the latest project for this category
+    const { data: projectData, error: projError } = await supabase
+      .from('project_categories')
+      .select(`
+        project:projects(
+          *,
+          images:project_images(*)
+        )
+      `)
+      .eq('category_id', category.id)
+      .order('created_at', { ascending: false, foreignTable: 'project' })
+      .limit(1);
+    
+    if (!projError && projectData && projectData.length > 0) {
+      const project = projectData[0].project;
+      if (project && project.images && project.images.length > 0) {
+        // Find thumbnail or use first image
+        const thumbnailImage = project.images.find((img: ProjectImage) => img.is_thumbnail) || project.images[0];
+        thumbnails[category.slug] = thumbnailImage.image_url;
+      }
+    }
+  }
+  
+  return thumbnails;
+};

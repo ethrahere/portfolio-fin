@@ -12,7 +12,7 @@ import {
   addProjectAudio
 } from '../lib/adminSupabase';
 import { getCategories, Project, Category } from '../lib/supabase';
-import MediaUploader, { MediaFile } from '../components/MediaUploader';
+import DatabaseMediaManager from '../components/DatabaseMediaManager';
 
 const AdminEnhanced = () => {
   const { isAdmin, login, logout, loading: authLoading } = useAuth();
@@ -37,9 +37,8 @@ const AdminEnhanced = () => {
     categoryIds: [] as string[]
   });
   
-  // Media files
-  const [imageFiles, setImageFiles] = useState<MediaFile[]>([]);
-  const [audioFiles, setAudioFiles] = useState<MediaFile[]>([]);
+  // Current editing project ID for media management
+  const [currentProjectId, setCurrentProjectId] = useState<string>('');
 
   useEffect(() => {
     if (isAdmin) {
@@ -113,42 +112,8 @@ const AdminEnhanced = () => {
         return;
       }
 
-      const projectId = result.project.id;
-
-      // Save images
-      for (const imageFile of imageFiles) {
-        if (imageFile.url && !imageFile.isUploading && !imageFile.error) {
-          try {
-            await addProjectImage(
-              projectId,
-              imageFile.url,
-              imageFile.alt_text || '',
-              imageFile.display_order,
-              imageFile.is_thumbnail || false
-            );
-          } catch (err: any) {
-            console.error('Error adding image:', err);
-            setError(`Project saved but failed to add image: ${err.message}`);
-          }
-        }
-      }
-
-      // Save audio files
-      for (const audioFile of audioFiles) {
-        if (audioFile.url && !audioFile.isUploading && !audioFile.error) {
-          try {
-            await addProjectAudio(
-              projectId,
-              audioFile.url,
-              audioFile.title || '',
-              audioFile.display_order
-            );
-          } catch (err: any) {
-            console.error('Error adding audio:', err);
-            setError(`Project saved but failed to add audio: ${err.message}`);
-          }
-        }
-      }
+      // Set the current project ID for media management
+      setCurrentProjectId(result.project.id);
 
       // Success
       resetForm();
@@ -172,8 +137,7 @@ const AdminEnhanced = () => {
       dimensions: '',
       categoryIds: []
     });
-    setImageFiles([]);
-    setAudioFiles([]);
+    setCurrentProjectId('');
     setEditingProject(null);
     setShowForm(false);
     setError('');
@@ -181,6 +145,7 @@ const AdminEnhanced = () => {
 
   const startEdit = (project: Project) => {
     setEditingProject(project);
+    setCurrentProjectId(project.id);
     setFormData({
       title: project.title,
       slug: project.slug,
@@ -190,22 +155,6 @@ const AdminEnhanced = () => {
       dimensions: project.dimensions,
       categoryIds: project.categories?.map(c => c.id) || []
     });
-    
-    // Load existing media files
-    setImageFiles(project.images?.map((img, index) => ({
-      id: img.id,
-      url: img.image_url,
-      alt_text: img.alt_text,
-      display_order: img.display_order,
-      is_thumbnail: img.is_thumbnail
-    })) || []);
-    
-    setAudioFiles(project.audios?.map((audio, index) => ({
-      id: audio.id,
-      url: audio.audio_url,
-      title: audio.title,
-      display_order: audio.display_order
-    })) || []);
     
     setShowForm(true);
   };
@@ -437,22 +386,31 @@ const AdminEnhanced = () => {
                     </div>
                   </div>
 
-                  {/* Media Upload Sections */}
-                  <div className="border-t border-gray-300 pt-6 space-y-6">
-                    <MediaUploader
-                      type="image"
-                      files={imageFiles}
-                      onFilesChange={setImageFiles}
-                      projectId={editingProject?.id}
-                    />
-                    
-                    <MediaUploader
-                      type="audio"
-                      files={audioFiles}
-                      onFilesChange={setAudioFiles}
-                      projectId={editingProject?.id}
-                    />
-                  </div>
+                  {/* Media Management Sections - Only show for existing projects */}
+                  {currentProjectId && (
+                    <div className="border-t border-gray-300 pt-6 space-y-6">
+                      <DatabaseMediaManager
+                        type="image"
+                        projectId={currentProjectId}
+                        onMediaChange={() => fetchData()}
+                      />
+                      
+                      <DatabaseMediaManager
+                        type="audio"
+                        projectId={currentProjectId}
+                        onMediaChange={() => fetchData()}
+                      />
+                    </div>
+                  )}
+
+                  {/* Message for new projects */}
+                  {!currentProjectId && !editingProject && (
+                    <div className="border-t border-gray-300 pt-6">
+                      <p className="text-sm text-gray-500 font-mono">
+                        Save the project first to upload images and audio files.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Form Actions */}
                   <div className="flex gap-4 pt-6 border-t border-gray-300">

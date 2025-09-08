@@ -1,67 +1,95 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Mail } from 'lucide-react';
+import { getLatestProjectThumbnails } from '../lib/supabase';
 
 const Home = () => {
+  const [thumbnails, setThumbnails] = useState<{ [categorySlug: string]: string }>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchThumbnails = async () => {
+      try {
+        const thumbs = await getLatestProjectThumbnails();
+        setThumbnails(thumbs);
+      } catch (error) {
+        console.error('Error fetching thumbnails:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchThumbnails();
+  }, []);
+
+  const CategoryBox = ({ 
+    to, 
+    categoryName, 
+    categorySlug 
+  }: { 
+    to: string; 
+    categoryName: string; 
+    categorySlug: string; 
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const thumbnail = thumbnails[categorySlug];
+
+    return (
+      <Link 
+        to={to}
+        className="group block border border-black hover:bg-black hover:text-white transition-colors duration-300 overflow-hidden"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="h-full flex items-center justify-center relative">
+          {/* Category Text */}
+          <span 
+            className={`text-xl md:text-3xl font-mono tracking-widest transition-opacity duration-300 ${
+              isHovered && thumbnail ? 'opacity-0' : 'opacity-100'
+            }`}
+          >
+            {categoryName}
+          </span>
+
+          {/* Thumbnail Image */}
+          {thumbnail && (
+            <div 
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                isHovered ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <img 
+                src={thumbnail}
+                alt={`Latest ${categoryName} project`}
+                className="w-full h-full object-cover group-hover:opacity-90"
+              />
+            </div>
+          )}
+        </div>
+      </Link>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-white text-black p-8 md:p-16">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-screen bg-white text-black p-8 md:p-16 flex flex-col">
+      <div className="max-w-6xl mx-auto flex-1 flex flex-col w-full">
         {/* Header */}
-        <header className="mb-24">
+        <header className="mb-8 md:mb-12">
           <h1 className="text-2xl md:text-3xl font-mono tracking-wide">
             ETHRA
           </h1>
         </header>
 
         {/* Main Grid */}
-        <main className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-32">
-          <Link 
-            to="/3d" 
-            className="group block aspect-square border border-black hover:bg-black hover:text-white transition-colors duration-300"
-          >
-            <div className="h-full flex items-center justify-center">
-              <span className="text-xl md:text-2xl font-mono tracking-widest">
-                3D
-              </span>
-            </div>
-          </Link>
-
-          <Link 
-            to="/design" 
-            className="group block aspect-square border border-black hover:bg-black hover:text-white transition-colors duration-300"
-          >
-            <div className="h-full flex items-center justify-center">
-              <span className="text-xl md:text-2xl font-mono tracking-widest">
-                DESIGN
-              </span>
-            </div>
-          </Link>
-
-          <Link 
-            to="/music" 
-            className="group block aspect-square border border-black hover:bg-black hover:text-white transition-colors duration-300"
-          >
-            <div className="h-full flex items-center justify-center">
-              <span className="text-xl md:text-2xl font-mono tracking-widest">
-                MUSIC
-              </span>
-            </div>
-          </Link>
-
-          <Link 
-            to="/essays" 
-            className="group block aspect-square border border-black hover:bg-black hover:text-white transition-colors duration-300"
-          >
-            <div className="h-full flex items-center justify-center">
-              <span className="text-xl md:text-2xl font-mono tracking-widest">
-                ESSAYS
-              </span>
-            </div>
-          </Link>
+        <main className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 flex-1 auto-rows-fr">
+          <CategoryBox to="/3d" categoryName="3D" categorySlug="3d" />
+          <CategoryBox to="/design" categoryName="DESIGN" categorySlug="design" />
+          <CategoryBox to="/music" categoryName="MUSIC" categorySlug="music" />
+          <CategoryBox to="/essays" categoryName="ESSAYS" categorySlug="essays" />
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-black pt-8">
+        <footer className="border-t border-black pt-8 mt-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
               <span className="text-sm md:text-base font-mono">
