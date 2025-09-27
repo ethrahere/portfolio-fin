@@ -30,7 +30,7 @@ const Project = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black p-8 md:p-16">
+      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
         <div className="max-w-6xl mx-auto">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
@@ -40,7 +40,7 @@ const Project = () => {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-white text-black p-8 md:p-16">
+      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
         <div className="max-w-6xl mx-auto">
           <Link 
             to={`/${category}`} 
@@ -58,7 +58,7 @@ const Project = () => {
   const projectImages = project.images?.map(img => img.image_url) || [];
 
   return (
-    <div className="min-h-screen bg-white text-black p-8 md:p-16">
+    <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         {/* Back Navigation */}
         <Link 

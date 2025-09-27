@@ -25,7 +25,7 @@ const Essays = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black p-8 md:p-16">
+      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
         <div className="max-w-6xl mx-auto">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
@@ -34,7 +34,7 @@ const Essays = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black p-8 md:p-16">
+    <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="mb-16">

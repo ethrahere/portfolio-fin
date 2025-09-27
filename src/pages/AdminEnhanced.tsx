@@ -169,7 +169,7 @@ const AdminEnhanced = () => {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-white text-black p-8 md:p-16">
+      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto">
           <Link 
             to="/" 
@@ -214,7 +214,7 @@ const AdminEnhanced = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-black p-8 md:p-16">
+      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
@@ -223,7 +223,7 @@ const AdminEnhanced = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black p-8 md:p-16">
+    <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         <header className="mb-16 flex items-center justify-between">
           <div>

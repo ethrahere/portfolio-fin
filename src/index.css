@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-image: url('/bg3.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100%;
+  background-color: transparent;
+}

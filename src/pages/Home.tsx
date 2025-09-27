@@ -71,7 +71,7 @@ const Home = () => {
   };
 
   return (
-    <div className="h-screen bg-white text-black p-8 md:p-16 flex flex-col">
+    <div className="min-h-screen text-black p-8 md:p-16 flex flex-col bg-white/50">
       <div className="max-w-6xl mx-auto flex-1 flex flex-col w-full">
         {/* Header */}
         <header className="mb-8 md:mb-12">

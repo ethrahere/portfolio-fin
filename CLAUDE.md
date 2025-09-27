@@ -16,26 +16,31 @@
 ```
 /
 ├── src/
-│   ├── App.tsx              # Main router configuration
-│   ├── main.tsx             # React app entry point
+│   ├── App.tsx                    # Main router with AuthProvider
+│   ├── main.tsx                   # React app entry point
 │   ├── components/
-│   │   └── ImageGallery.tsx # Reusable image carousel component
+│   │   ├── ImageGallery.tsx       # Reusable image carousel component
+│   │   └── DatabaseMediaManager.tsx # Database-first media management
+│   ├── contexts/
+│   │   └── AuthContext.tsx        # Supabase authentication context
 │   ├── pages/
-│   │   ├── Home.tsx         # Landing page with category grid
-│   │   ├── ThreeD.tsx       # 3D projects listing
-│   │   ├── Design.tsx       # Design projects listing
-│   │   ├── Music.tsx        # Music projects listing
-│   │   ├── Essays.tsx       # Essays listing
-│   │   └── Project.tsx      # Individual project detail page
+│   │   ├── Home.tsx               # Landing page with hover thumbnails
+│   │   ├── ThreeD.tsx             # 3D projects listing
+│   │   ├── Design.tsx             # Design projects listing
+│   │   ├── Music.tsx              # Music projects listing
+│   │   ├── Essays.tsx             # Essays listing
+│   │   ├── Project.tsx            # Individual project detail page
+│   │   └── AdminEnhanced.tsx      # Full admin panel with media management
 │   └── lib/
-│       └── supabase.ts      # Database client & type definitions
+│       ├── supabase.ts            # Database client & type definitions
+│       └── adminSupabase.ts       # Admin operations & media management
 ├── supabase/
-│   └── migrations/          # Database schema migrations
-├── public/                  # Static assets
-├── package.json            # Dependencies & scripts
-├── tailwind.config.js      # Tailwind configuration
-├── vite.config.ts          # Vite build configuration
-└── tsconfig.*.json         # TypeScript configurations
+│   └── migrations/                # Database schema migrations
+├── public/                        # Static assets
+├── package.json                   # Dependencies & scripts
+├── tailwind.config.js             # Tailwind configuration
+├── vite.config.ts                 # Vite build configuration
+└── tsconfig.*.json               # TypeScript configurations
 ```
 
 ## Database Schema (Supabase)
@@ -152,6 +157,70 @@ All category pages (3D, Design, Music, Essays) follow the same pattern:
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
 
+## Admin Panel Features
+
+### Authentication System
+- **Location**: `/admin` (accessible via subtle dot in homepage footer)
+- **Authentication**: Supabase Auth with email/password
+- **Email**: `ethra.here@gmail.com`
+- **Security**: Row Level Security (RLS) policies protect all operations
+
+### Media Management
+- **Database-first approach**: All media stored and managed through database
+- **Image uploads**: Drag & drop, multiple files, validation (JPEG, PNG, GIF, WebP, max 10MB)
+- **Audio uploads**: Drag & drop, multiple files, validation (MP3, WAV, OGG, AAC, max 50MB)
+- **Order management**: Up/down buttons update `display_order` in database
+- **Real-time updates**: UI refreshes after every database operation
+- **Signed URLs**: Uses Supabase signed URLs for secure media access (1-year expiry)
+
+### Project Management
+- **CRUD operations**: Create, read, update, delete projects
+- **Category assignment**: Multi-category support via junction table
+- **Auto-slug generation**: URL-friendly slugs from titles
+- **Form validation**: Required fields and proper data types
+- **Error handling**: Comprehensive error messages and fallback states
+
+### Workflow
+1. **New projects**: Save basic info first, then upload media
+2. **Editing projects**: Media loads automatically from database
+3. **Media operations**: Upload, reorder, edit metadata, delete
+4. **All changes**: Immediately synchronized with database
+
+## Homepage Features
+
+### Responsive Layout
+- **Full viewport utilization**: Uses `h-screen` with flexbox layout
+- **Mobile**: Stacked boxes with `aspect-[4/3]` ratio
+- **Desktop**: 2x2 grid with square boxes filling space between header/footer
+- **No scrolling**: Footer always visible in viewport
+
+### Hover Thumbnails
+- **Dynamic previews**: Shows latest project thumbnail on hover
+- **Smooth transitions**: 300ms opacity fade between text and images
+- **Database-driven**: Fetches latest project from each category on page load
+- **Fallback graceful**: Shows category text if no thumbnails available
+
+## Technical Implementation Details
+
+### File Upload System
+- **Storage**: Supabase Storage with buckets (`images`, `audio`)
+- **Path structure**: `projects/{projectId}/{filename}`
+- **URL generation**: Signed URLs for secure access
+- **Validation**: File type and size validation before upload
+- **Error handling**: Comprehensive upload error management
+
+### Database Operations
+- **Media management**: Separate functions for images and audio
+- **Order management**: `updateImageOrder()` and `updateAudioOrder()`
+- **Real-time sync**: `getProjectMedia()` for fresh data loading
+- **Transaction safety**: Proper error handling and rollback
+
+### Authentication Flow
+- **Context-based**: React Context for auth state management
+- **Persistent sessions**: Supabase handles session persistence
+- **Admin-only access**: Email validation restricts access
+- **Secure operations**: All admin operations require authentication
+
 ## Important Notes for Future Changes
 
 1. **Adding New Categories**: 
@@ -170,14 +239,23 @@ All category pages (3D, Design, Music, Essays) follow the same pattern:
    - Hover effects should invert colors (black/white swap)
 
 4. **Media Handling**:
-   - Images should be optimized before uploading to Supabase Storage
-   - Always set proper `alt_text` for accessibility
-   - Use `display_order` for consistent ordering
+   - **Use DatabaseMediaManager**: All media operations go through database
+   - **Signed URLs**: Media uses signed URLs, not public URLs
+   - **Order management**: Always update `display_order` in database
+   - **Validation**: File type/size validation before upload
+   - **Real-time sync**: UI refreshes after database operations
 
-5. **Performance Considerations**:
-   - Images are loaded lazily by default
-   - Supabase queries include proper ordering and selection
-   - Consider adding loading states for better UX
+5. **Admin Operations**:
+   - **Authentication required**: All admin functions need Supabase auth
+   - **Database-first**: No frontend state for media, always fetch from DB
+   - **Error handling**: Comprehensive error messages for all operations
+   - **RLS policies**: Ensure proper Row Level Security configuration
+
+6. **Performance Considerations**:
+   - **Hover thumbnails**: Cached on homepage load for smooth experience
+   - **Signed URLs**: Long expiry (1 year) reduces regeneration overhead
+   - **Database queries**: Optimized with proper ordering and selection
+   - **Loading states**: Comprehensive loading indicators throughout admin panel
 
 ## Contact Information in Code
 - Instagram: `https://instagram.com/ethra.here`
@@ -185,6 +263,25 @@ All category pages (3D, Design, Music, Essays) follow the same pattern:
 - Email: `ethra.here@gmail.com`
 
 ## Git & Deployment
-- This is not currently a git repository
-- No deployment configuration present
-- Consider initializing git and setting up CI/CD if needed
+
+### Repository
+- **GitHub**: https://github.com/ethrahere/portfolio-fin
+- **Branch**: main
+- **Git user**: ethrahere (ethra.here@gmail.com)
+
+### Deployment
+- **Platform**: Vercel (recommended)
+- **Repository**: Import from GitHub
+- **Environment Variables**: 
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+
+### Recent Updates (Session Summary)
+1. **Fixed homepage layout**: Full viewport utilization with no scrolling required
+2. **Added hover thumbnails**: Dynamic previews of latest projects on homepage hover
+3. **Enhanced admin panel**: Complete database-first media management system
+4. **Improved authentication**: Supabase Auth integration with RLS policies
+5. **Fixed media handling**: Signed URLs, proper order management, real-time sync
+6. **Database operations**: Comprehensive CRUD with error handling and validation
