@@ -26,13 +26,15 @@ export interface Project {
   year: number;
   medium: string;
   dimensions: string;
+  thumbnail_url?: string;
   category_id?: string; // Keep for backward compatibility
   display_order: number;
   created_at: string;
   updated_at: string;
   categories?: Category[];
   images?: ProjectImage[];
-  audios?: ProjectAudio[]; // <-- add this
+  audios?: ProjectAudio[];
+  videos?: ProjectVideo[];
 }
 
 export interface ProjectImage {
@@ -51,6 +53,16 @@ export interface ProjectAudio {
   audio_url: string;
   title: string;
   display_order: number;
+  created_at: string;
+}
+
+export interface ProjectVideo {
+  id: string;
+  project_id: string;
+  video_url: string;
+  title: string;
+  display_order: number;
+  is_thumbnail: boolean;
   created_at: string;
 }
 
@@ -83,18 +95,19 @@ export const getProjectsByCategory = async (categorySlug: string): Promise<Proje
       project:projects(
         *,
         images:project_images(*),
-        audios:project_audio(*)
+        audios:project_audio(*),
+        videos:project_videos(*)
       )
     `)
     .eq('category_id', categoryData.id)
     .order('display_order', { ascending: true, foreignTable: 'project' });
-  
+
   if (error) throw error;
-  
+
   // Transform the data and get all categories for each project
-  const projects = await Promise.all((data || []).map(async (item: any) => {
+  const projects = await Promise.all((data || []).map(async (item: { project: Project }) => {
     const project = item.project;
-    
+
     // Get all categories for this project
     const { data: projectCategories } = await supabase
       .from('project_categories')
@@ -102,10 +115,10 @@ export const getProjectsByCategory = async (categorySlug: string): Promise<Proje
         category:categories(*)
       `)
       .eq('project_id', project.id);
-    
+
     return {
       ...project,
-      categories: projectCategories?.map((pc: any) => pc.category) || []
+      categories: projectCategories?.map((pc: { category: Category }) => pc.category) || []
     };
   }));
   
@@ -121,17 +134,18 @@ export const getProject = async (categorySlug: string, projectSlug: string): Pro
         category:categories(*)
       ),
       images:project_images(*),
-      audios:project_audio(*)
+      audios:project_audio(*),
+      videos:project_videos(*)
     `)
     .eq('project_categories.category.slug', categorySlug)
     .eq('slug', projectSlug)
     .single();
-  
+
   if (error) {
     if (error.code === 'PGRST116') return null; // Not found
     throw error;
   }
-  
+
   // Sort images by display_order
   if (data.images) {
     data.images.sort((a: ProjectImage, b: ProjectImage) => a.display_order - b.display_order);
@@ -140,18 +154,37 @@ export const getProject = async (categorySlug: string, projectSlug: string): Pro
   if (data.audios) {
     data.audios.sort((a: ProjectAudio, b: ProjectAudio) => a.display_order - b.display_order);
   }
-  
+  // Sort videos by display_order
+  if (data.videos) {
+    data.videos.sort((a: ProjectVideo, b: ProjectVideo) => a.display_order - b.display_order);
+  }
+
   // Transform categories
   if (data.categories) {
-    data.categories = data.categories.map((pc: any) => pc.category);
+    data.categories = data.categories.map((pc: { category: Category }) => pc.category);
   }
-  
   return data;
 };
 
 export const getThumbnailForProject = (project: Project): string => {
+  // First priority: Use thumbnail_url if it exists
+  if (project.thumbnail_url) return project.thumbnail_url;
+
+  // Second priority: Find a thumbnail image
   const thumbnailImage = project.images?.find(img => img.is_thumbnail);
-  return thumbnailImage?.image_url || project.images?.[0]?.image_url || '';
+  if (thumbnailImage) return thumbnailImage.image_url;
+
+  // Third priority: Use the first image
+  if (project.images?.[0]) return project.images[0].image_url;
+
+  // Fourth priority: Find a thumbnail video
+  const thumbnailVideo = project.videos?.find(vid => vid.is_thumbnail);
+  if (thumbnailVideo) return thumbnailVideo.video_url;
+
+  // Fifth priority: Use the first video
+  if (project.videos?.[0]) return project.videos[0].video_url;
+
+  return '';
 };
 
 // Helper to convert storage URLs to signed URLs if needed
@@ -160,7 +193,7 @@ export const getSignedUrl = async (storageUrl: string, bucket: string = 'images'
   if (storageUrl.includes('sign/')) {
     return storageUrl;
   }
-  
+
   // If it's a public URL, convert to signed URL
   if (storageUrl.includes('/storage/v1/object/public/')) {
     // Extract the file path from the public URL
@@ -168,17 +201,22 @@ export const getSignedUrl = async (storageUrl: string, bucket: string = 'images'
     if (urlParts.length === 2) {
       const fullPath = urlParts[1]; // e.g., "images/projects/id/filename.jpg"
       const filePath = fullPath.replace(`${bucket}/`, ''); // Remove bucket name from path
-      
+
       const { data: signedData, error } = await supabase.storage
         .from(bucket)
         .createSignedUrl(filePath, 365 * 24 * 60 * 60); // 1 year expiry
-      
+
       if (!error && signedData) {
         return signedData.signedUrl;
       }
     }
   }
-  
+
+  // If it's already a signed URL from Supabase storage, return as is
+  if (storageUrl.includes('/storage/v1/object/sign/')) {
+    return storageUrl;
+  }
+
   // Return original URL if conversion fails
   return storageUrl;
 };
@@ -188,11 +226,11 @@ export const getLatestProjectThumbnails = async (): Promise<{ [categorySlug: str
   const { data: categories, error: catError } = await supabase
     .from('categories')
     .select('id, slug');
-  
+
   if (catError || !categories) return {};
-  
+
   const thumbnails: { [categorySlug: string]: string } = {};
-  
+
   for (const category of categories) {
     // Get the latest project for this category
     const { data: projectData, error: projError } = await supabase
@@ -200,22 +238,26 @@ export const getLatestProjectThumbnails = async (): Promise<{ [categorySlug: str
       .select(`
         project:projects(
           *,
-          images:project_images(*)
+          images:project_images(*),
+          videos:project_videos(*)
         )
       `)
       .eq('category_id', category.id)
       .order('created_at', { ascending: false, foreignTable: 'project' })
       .limit(1);
-    
+
     if (!projError && projectData && projectData.length > 0) {
       const project = projectData[0].project;
-      if (project && project.images && project.images.length > 0) {
-        // Find thumbnail or use first image
-        const thumbnailImage = project.images.find((img: ProjectImage) => img.is_thumbnail) || project.images[0];
-        thumbnails[category.slug] = thumbnailImage.image_url;
+
+      if (project) {
+        // Use the getThumbnailForProject function for consistent logic
+        const thumbnail = getThumbnailForProject(project);
+        if (thumbnail) {
+          thumbnails[category.slug] = thumbnail;
+        }
       }
     }
   }
-  
+
   return thumbnails;
 };

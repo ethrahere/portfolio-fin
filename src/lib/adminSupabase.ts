@@ -1,4 +1,4 @@
-import { supabase, Project, Category, ProjectImage, ProjectAudio } from './supabase';
+import { supabase, Project, ProjectImage, ProjectAudio, ProjectVideo, Category } from './supabase';
 
 export interface CreateProjectData {
   title: string;
@@ -77,6 +77,33 @@ export const uploadAudio = async (file: File, projectId?: string): Promise<strin
   return signedData.signedUrl;
 };
 
+export const uploadVideo = async (file: File, projectId?: string): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const filePath = projectId ? `projects/${projectId}/${fileName}` : `temp/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('video')
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Video upload error:', uploadError);
+    throw new Error(`Video upload failed: ${uploadError.message}`);
+  }
+
+  // Get signed URL (since public URLs aren't working due to RLS)
+  const { data: signedData, error: urlError } = await supabase.storage
+    .from('video')
+    .createSignedUrl(filePath, 365 * 24 * 60 * 60); // 1 year expiry
+
+  if (urlError) {
+    console.error('Video URL generation error:', urlError);
+    throw new Error(`Video URL generation failed: ${urlError.message}`);
+  }
+
+  return signedData.signedUrl;
+};
+
 // Project media management
 export const addProjectImage = async (projectId: string, imageUrl: string, altText: string, displayOrder: number, isThumbnail: boolean = false): Promise<ProjectImage> => {
   const { data, error } = await supabase
@@ -111,6 +138,23 @@ export const addProjectAudio = async (projectId: string, audioUrl: string, title
   return data;
 };
 
+export const addProjectVideo = async (projectId: string, videoUrl: string, title: string = '', displayOrder: number): Promise<ProjectVideo> => {
+  const { data, error } = await supabase
+    .from('project_videos')
+    .insert([{
+      project_id: projectId,
+      video_url: videoUrl,
+      title: title,
+      display_order: displayOrder,
+      is_thumbnail: false
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
 export const deleteProjectImage = async (imageId: string): Promise<void> => {
   const { error } = await supabase
     .from('project_images')
@@ -125,6 +169,15 @@ export const deleteProjectAudio = async (audioId: string): Promise<void> => {
     .from('project_audio')
     .delete()
     .eq('id', audioId);
+
+  if (error) throw error;
+};
+
+export const deleteProjectVideo = async (videoId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('project_videos')
+    .delete()
+    .eq('id', videoId);
 
   if (error) throw error;
 };
@@ -149,13 +202,24 @@ export const updateAudioOrder = async (audioId: string, newOrder: number): Promi
   if (error) throw error;
 };
 
+// Update video order in database
+export const updateVideoOrder = async (videoId: string, newOrder: number): Promise<void> => {
+  const { error } = await supabase
+    .from('project_videos')
+    .update({ display_order: newOrder })
+    .eq('id', videoId);
+
+  if (error) throw error;
+};
+
 // Get project with fresh media data
-export const getProjectMedia = async (projectId: string): Promise<{ images: any[], audios: any[] }> => {
+export const getProjectMedia = async (projectId: string): Promise<{ images: ProjectImage[], audios: ProjectAudio[], videos: ProjectVideo[] }> => {
   const { data, error } = await supabase
     .from('projects')
     .select(`
       images:project_images(*),
-      audios:project_audio(*)
+      audios:project_audio(*),
+      videos:project_videos(*)
     `)
     .eq('id', projectId)
     .single();
@@ -163,10 +227,11 @@ export const getProjectMedia = async (projectId: string): Promise<{ images: any[
   if (error) throw error;
 
   // Sort by display_order
-  const images = (data?.images || []).sort((a: any, b: any) => a.display_order - b.display_order);
-  const audios = (data?.audios || []).sort((a: any, b: any) => a.display_order - b.display_order);
+  const images = (data?.images || []).sort((a: ProjectImage, b: ProjectImage) => a.display_order - b.display_order);
+  const audios = (data?.audios || []).sort((a: ProjectAudio, b: ProjectAudio) => a.display_order - b.display_order);
+  const videos = (data?.videos || []).sort((a: ProjectVideo, b: ProjectVideo) => a.display_order - b.display_order);
 
-  return { images, audios };
+  return { images, audios, videos };
 };
 
 // Enhanced project CRUD with better error handling
@@ -187,7 +252,7 @@ export const createProjectAdmin = async (projectData: CreateProjectData): Promis
 
     if (projectError) {
       console.error('Project creation error:', projectError);
-      return { project: null as any, success: false, error: projectError.message };
+      return { project: null as Project, success: false, error: projectError.message };
     }
 
     // Insert project-category relationships
@@ -209,9 +274,10 @@ export const createProjectAdmin = async (projectData: CreateProjectData): Promis
     }
 
     return { project: newProject, success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create project error:', error);
-    return { project: null as any, success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { project: null as Project, success: false, error: errorMessage };
   }
 };
 
@@ -232,7 +298,7 @@ export const updateProjectAdmin = async (projectData: UpdateProjectData): Promis
 
     if (projectError) {
       console.error('Project update error:', projectError);
-      return { project: null as any, success: false, error: projectError.message };
+      return { project: null as Project, success: false, error: projectError.message };
     }
 
     // Update category relationships if provided
@@ -267,9 +333,10 @@ export const updateProjectAdmin = async (projectData: UpdateProjectData): Promis
     }
 
     return { project: updatedProject, success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update project error:', error);
-    return { project: null as any, success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { project: null as Project, success: false, error: errorMessage };
   }
 };
 
@@ -285,6 +352,9 @@ export const deleteProjectAdmin = async (projectId: string): Promise<{ success: 
     
     // Delete project audio
     await supabase.from('project_audio').delete().eq('project_id', projectId);
+
+    // Delete project videos
+    await supabase.from('project_videos').delete().eq('project_id', projectId);
     
     // Delete project
     const { error: projectError } = await supabase
@@ -298,9 +368,10 @@ export const deleteProjectAdmin = async (projectId: string): Promise<{ success: 
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete project error:', error);
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { success: false, error: errorMessage };
   }
 };
 
@@ -313,7 +384,8 @@ export const getAllProjectsAdmin = async (): Promise<Project[]> => {
         category:categories(*)
       ),
       images:project_images(*),
-      audios:project_audio(*)
+      audios:project_audio(*),
+      videos:project_videos(*)
     `)
     .order('created_at', { ascending: false });
 
@@ -323,9 +395,9 @@ export const getAllProjectsAdmin = async (): Promise<Project[]> => {
   }
 
   // Transform data
-  return (data || []).map((project: any) => ({
+  return (data || []).map((project: Project & { categories?: { category: Category }[] }) => ({
     ...project,
-    categories: project.categories?.map((pc: any) => pc.category) || []
+    categories: project.categories?.map((pc: { category: Category }) => pc.category) || []
   }));
 };
 
@@ -356,14 +428,29 @@ export const validateImageFile = (file: File): boolean => {
 export const validateAudioFile = (file: File): boolean => {
   const validTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/aac'];
   const maxSize = 50 * 1024 * 1024; // 50MB
-  
+
   if (!validTypes.includes(file.type)) {
     throw new Error('Invalid audio type. Supported: MP3, WAV, OGG, AAC');
   }
-  
+
   if (file.size > maxSize) {
     throw new Error('Audio file too large. Max size: 50MB');
   }
-  
+
+  return true;
+};
+
+export const validateVideoFile = (file: File): boolean => {
+  const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+  const maxSize = 100 * 1024 * 1024; // 100MB
+
+  if (!validTypes.includes(file.type)) {
+    throw new Error('Invalid video type. Supported: MP4, WebM, OGG, MOV, AVI');
+  }
+
+  if (file.size > maxSize) {
+    throw new Error('Video file too large. Max size: 100MB');
+  }
+
   return true;
 };

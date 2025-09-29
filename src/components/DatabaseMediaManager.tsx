@@ -1,18 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Music, Loader2 } from 'lucide-react';
-import { 
-  uploadImage, 
-  uploadAudio, 
-  validateImageFile, 
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Upload, X, Image as ImageIcon, Music, Loader2, Video } from 'lucide-react';
+import {
+  uploadImage,
+  uploadAudio,
+  uploadVideo,
+  validateImageFile,
   validateAudioFile,
+  validateVideoFile,
   addProjectImage,
   addProjectAudio,
+  addProjectVideo,
   deleteProjectImage,
   deleteProjectAudio,
+  deleteProjectVideo,
   updateImageOrder,
   updateAudioOrder,
+  updateVideoOrder,
   getProjectMedia
 } from '../lib/adminSupabase';
+import { supabase } from '../lib/supabase';
 
 interface DatabaseMediaFile {
   id: string;
@@ -24,7 +30,7 @@ interface DatabaseMediaFile {
 }
 
 interface DatabaseMediaManagerProps {
-  type: 'image' | 'audio';
+  type: 'image' | 'audio' | 'video';
   projectId: string;
   onMediaChange?: () => void;
 }
@@ -40,35 +46,43 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load existing media from database
-  useEffect(() => {
-    loadMedia();
-  }, [projectId, type]);
-
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     if (!projectId) {
       setLoading(false);
       return;
     }
 
     try {
-      const { images, audios } = await getProjectMedia(projectId);
-      const mediaFiles = type === 'image' ? images : audios;
-      
+      const { images, audios, videos } = await getProjectMedia(projectId);
+      let mediaFiles;
+
+      if (type === 'image') {
+        mediaFiles = images;
+      } else if (type === 'audio') {
+        mediaFiles = audios;
+      } else {
+        mediaFiles = videos;
+      }
+
       setFiles(mediaFiles.map(file => ({
         id: file.id,
-        url: file[type === 'image' ? 'image_url' : 'audio_url'],
+        url: file[type === 'image' ? 'image_url' : type === 'audio' ? 'audio_url' : 'video_url'],
         alt_text: file.alt_text,
         title: file.title,
-        display_order: file.display_order,
-        is_thumbnail: file.is_thumbnail
+        display_order: file.display_order || 0,
+        is_thumbnail: file.is_thumbnail || false
       })));
     } catch (error) {
       console.error(`Error loading ${type} files:`, error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, type]);
+
+  // Load existing media from database
+  useEffect(() => {
+    loadMedia();
+  }, [loadMedia]);
 
   const handleFileSelect = async (selectedFiles: FileList | null) => {
     if (!selectedFiles || !projectId) return;
@@ -82,22 +96,25 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
         // Validate file
         if (type === 'image') {
           validateImageFile(file);
-        } else {
+        } else if (type === 'audio') {
           validateAudioFile(file);
+        } else {
+          validateVideoFile(file);
         }
 
         // Upload file
         let uploadedUrl: string;
         if (type === 'image') {
           uploadedUrl = await uploadImage(file, projectId);
-        } else {
+        } else if (type === 'audio') {
           uploadedUrl = await uploadAudio(file, projectId);
+        } else {
+          uploadedUrl = await uploadVideo(file, projectId);
         }
 
         // Add to database
-        const nextOrder = Math.max(...files.map(f => f.display_order), 0) + 1;
-        
         if (type === 'image') {
+          const nextOrder = Math.max(...files.map(f => f.display_order), 0) + 1;
           await addProjectImage(
             projectId,
             uploadedUrl,
@@ -105,18 +122,24 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
             nextOrder,
             files.length === 0 // Make first image thumbnail by default
           );
-        } else {
+        } else if (type === 'audio') {
+          const nextOrder = Math.max(...files.map(f => f.display_order), 0) + 1;
           await addProjectAudio(
             projectId,
             uploadedUrl,
             file.name,
             nextOrder
           );
+        } else {
+          // Video: add with display order and title
+          const nextOrder = Math.max(...files.map(f => f.display_order), 0) + 1;
+          await addProjectVideo(projectId, uploadedUrl, file.name, nextOrder);
         }
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Upload error for ${file.name}:`, error);
-        alert(`Failed to upload ${file.name}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        alert(`Failed to upload ${file.name}: ${errorMessage}`);
       }
     }
 
@@ -134,8 +157,10 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
     try {
       if (type === 'image') {
         await deleteProjectImage(fileId);
-      } else {
+      } else if (type === 'audio') {
         await deleteProjectAudio(fileId);
+      } else {
+        await deleteProjectVideo(fileId);
       }
 
       // Reload media from database
@@ -161,9 +186,12 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
       if (type === 'image') {
         await updateImageOrder(currentFile.id, targetFile.display_order);
         await updateImageOrder(targetFile.id, currentFile.display_order);
-      } else {
+      } else if (type === 'audio') {
         await updateAudioOrder(currentFile.id, targetFile.display_order);
         await updateAudioOrder(targetFile.id, currentFile.display_order);
+      } else {
+        await updateVideoOrder(currentFile.id, targetFile.display_order);
+        await updateVideoOrder(targetFile.id, currentFile.display_order);
       }
 
       // Reload media from database
@@ -178,7 +206,7 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
   const handleMetadataUpdate = async (fileId: string, updates: Partial<DatabaseMediaFile>) => {
     try {
       if (type === 'image') {
-        const updateData: any = {};
+        const updateData: { alt_text?: string; is_thumbnail?: boolean } = {};
         if (updates.alt_text !== undefined) updateData.alt_text = updates.alt_text;
         if (updates.is_thumbnail !== undefined) {
           updateData.is_thumbnail = updates.is_thumbnail;
@@ -189,32 +217,58 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
               if (file.id !== fileId && file.is_thumbnail) {
                 await updateImageOrder(file.id, file.display_order); // This will trigger an update
                 // Update is_thumbnail to false for other images
-                const { error } = await import('../lib/supabase').then(m => m.supabase
+                const { error } = await supabase
                   .from('project_images')
                   .update({ is_thumbnail: false })
-                  .eq('id', file.id)
-                );
+                  .eq('id', file.id);
                 if (error) console.error('Error unsetting thumbnail:', error);
               }
             }
           }
         }
 
-        const { error } = await import('../lib/supabase').then(m => m.supabase
+        const { error } = await supabase
           .from('project_images')
           .update(updateData)
-          .eq('id', fileId)
-        );
+          .eq('id', fileId);
         
         if (error) throw error;
-      } else {
+      } else if (type === 'audio') {
         if (updates.title !== undefined) {
-          const { error } = await import('../lib/supabase').then(m => m.supabase
+          const { error } = await supabase
             .from('project_audio')
             .update({ title: updates.title })
-            .eq('id', fileId)
-          );
-          
+            .eq('id', fileId);
+
+          if (error) throw error;
+        }
+      } else {
+        // Handle video metadata updates
+        const updateData: { title?: string; is_thumbnail?: boolean } = {};
+        if (updates.title !== undefined) updateData.title = updates.title;
+        if (updates.is_thumbnail !== undefined) {
+          updateData.is_thumbnail = updates.is_thumbnail;
+
+          // If setting as thumbnail, unset others first
+          if (updates.is_thumbnail) {
+            for (const file of files) {
+              if (file.id !== fileId && file.is_thumbnail) {
+                const { error } = await supabase
+                  .from('project_videos')
+                  .update({ is_thumbnail: false })
+                  .eq('id', file.id);
+                if (error) console.error('Error unsetting video thumbnail:', error);
+              }
+            }
+          }
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error } = await supabase
+            .from('project_videos')
+            .update(updateData)
+            .eq('id', fileId);
+
           if (error) throw error;
         }
       }
@@ -244,15 +298,17 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
     setDragOver(false);
   };
 
-  const acceptTypes = type === 'image' 
+  const acceptTypes = type === 'image'
     ? 'image/jpeg,image/jpg,image/png,image/gif,image/webp'
-    : 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac';
+    : type === 'audio'
+    ? 'audio/mpeg,audio/mp3,audio/wav,audio/ogg,audio/aac'
+    : 'video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo';
 
   if (loading) {
     return (
       <div className="space-y-4">
         <h3 className="text-sm font-mono tracking-widest">
-          {type === 'image' ? 'IMAGES' : 'AUDIO FILES'}
+          {type === 'image' ? 'IMAGES' : type === 'audio' ? 'AUDIO FILES' : 'VIDEOS'}
         </h3>
         <div className="text-sm text-gray-500">Loading...</div>
       </div>
@@ -263,7 +319,7 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-mono tracking-widest">
-          {type === 'image' ? 'IMAGES' : 'AUDIO FILES'}
+          {type === 'image' ? 'IMAGES' : type === 'audio' ? 'AUDIO FILES' : 'VIDEOS'}
         </h3>
         <button
           type="button"
@@ -308,14 +364,22 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
               : 'border-gray-300 hover:border-gray-400'
           } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
         >
-          {type === 'image' ? <ImageIcon size={32} className="mx-auto mb-2 text-gray-400" /> : <Music size={32} className="mx-auto mb-2 text-gray-400" />}
+          {type === 'image' ? (
+            <ImageIcon size={32} className="mx-auto mb-2 text-gray-400" />
+          ) : type === 'audio' ? (
+            <Music size={32} className="mx-auto mb-2 text-gray-400" />
+          ) : (
+            <Video size={32} className="mx-auto mb-2 text-gray-400" />
+          )}
           <p className="text-sm font-mono text-gray-600 mb-2">
             Drag & drop {type}s here or click to browse
           </p>
           <p className="text-xs text-gray-500">
-            {type === 'image' 
+            {type === 'image'
               ? 'Supported: JPEG, PNG, GIF, WebP (max 10MB)'
-              : 'Supported: MP3, WAV, OGG, AAC (max 50MB)'
+              : type === 'audio'
+              ? 'Supported: MP3, WAV, OGG, AAC (max 50MB)'
+              : 'Supported: MP4, WebM, OGG, MOV, AVI (max 100MB)'
             }
           </p>
         </div>
@@ -330,14 +394,18 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                 {/* Preview */}
                 <div className="flex-shrink-0">
                   {type === 'image' ? (
-                    <img 
-                      src={file.url} 
+                    <img
+                      src={file.url}
                       alt={file.alt_text || ''}
                       className="w-16 h-16 object-cover border border-gray-200"
                     />
-                  ) : (
+                  ) : type === 'audio' ? (
                     <div className="w-16 h-16 bg-gray-100 border border-gray-200 flex items-center justify-center">
                       <Music size={24} className="text-gray-400" />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 border border-gray-200 flex items-center justify-center">
+                      <Video size={24} className="text-gray-400" />
                     </div>
                   )}
                 </div>
@@ -364,7 +432,7 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                           <span className="font-mono">Thumbnail</span>
                         </label>
                       </>
-                    ) : (
+                    ) : type === 'audio' ? (
                       <input
                         type="text"
                         placeholder="Track title"
@@ -372,6 +440,25 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                         onChange={(e) => handleMetadataUpdate(file.id, { title: e.target.value })}
                         className="text-xs font-mono border border-gray-300 px-2 py-1"
                       />
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Video title"
+                          value={file.title || ''}
+                          onChange={(e) => handleMetadataUpdate(file.id, { title: e.target.value })}
+                          className="text-xs font-mono border border-gray-300 px-2 py-1"
+                        />
+                        <label className="flex items-center gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={file.is_thumbnail || false}
+                            onChange={(e) => handleMetadataUpdate(file.id, { is_thumbnail: e.target.checked })}
+                            className="w-3 h-3"
+                          />
+                          <span className="font-mono">Thumbnail</span>
+                        </label>
+                      </>
                     )}
                   </div>
                 </div>
@@ -396,7 +483,11 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(file.id, type === 'image' ? (file.alt_text || 'image') : (file.title || 'audio'))}
+                    onClick={() => handleDelete(
+                      file.id,
+                      type === 'image' ? (file.alt_text || 'image') :
+                      type === 'audio' ? (file.title || 'audio') : (file.title || 'video')
+                    )}
                     className="p-1 text-red-500 hover:bg-red-50"
                   >
                     <X size={14} />

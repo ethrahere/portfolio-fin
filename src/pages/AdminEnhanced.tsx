@@ -7,12 +7,11 @@ import {
   deleteProjectAdmin, 
   createProjectAdmin, 
   updateProjectAdmin, 
-  generateSlug,
-  addProjectImage,
-  addProjectAudio
+  generateSlug
 } from '../lib/adminSupabase';
 import { getCategories, Project, Category } from '../lib/supabase';
 import DatabaseMediaManager from '../components/DatabaseMediaManager';
+import { syncOrphanedVideos } from '../lib/syncVideos';
 
 const AdminEnhanced = () => {
   const { isAdmin, login, logout, loading: authLoading } = useAuth();
@@ -24,6 +23,7 @@ const AdminEnhanced = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string>('');
   
   // Form data
@@ -119,9 +119,10 @@ const AdminEnhanced = () => {
       resetForm();
       await fetchData();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving project:', error);
-      setError(error.message || 'Failed to save project');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(errorMessage || 'Failed to save project');
     } finally {
       setSaving(false);
     }
@@ -157,6 +158,24 @@ const AdminEnhanced = () => {
     });
     
     setShowForm(true);
+  };
+
+  const handleSyncVideos = async (projectId: string) => {
+    setSyncing(true);
+    try {
+      const result = await syncOrphanedVideos(projectId);
+      if (result.success) {
+        alert(`Success: ${result.message}`);
+        await fetchData(); // Refresh the data
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleTitleChange = (title: string) => {
@@ -400,6 +419,12 @@ const AdminEnhanced = () => {
                         projectId={currentProjectId}
                         onMediaChange={() => fetchData()}
                       />
+
+                      <DatabaseMediaManager
+                        type="video"
+                        projectId={currentProjectId}
+                        onMediaChange={() => fetchData()}
+                      />
                     </div>
                   )}
 
@@ -407,7 +432,7 @@ const AdminEnhanced = () => {
                   {!currentProjectId && !editingProject && (
                     <div className="border-t border-gray-300 pt-6">
                       <p className="text-sm text-gray-500 font-mono">
-                        Save the project first to upload images and audio files.
+                        Save the project first to upload images, audio, and video files.
                       </p>
                     </div>
                   )}
@@ -467,7 +492,7 @@ const AdminEnhanced = () => {
                       {project.description.substring(0, 100)}...
                     </p>
                     <div className="text-xs text-gray-400">
-                      {project.images?.length || 0} images • {project.audios?.length || 0} audio files
+                      {project.images?.length || 0} images • {project.audios?.length || 0} audio files • {project.videos?.length || 0} videos
                     </div>
                   </div>
                   
@@ -485,6 +510,14 @@ const AdminEnhanced = () => {
                       title="Edit project"
                     >
                       <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleSyncVideos(project.id)}
+                      disabled={syncing}
+                      className="p-2 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors disabled:opacity-50"
+                      title="Sync orphaned videos from storage"
+                    >
+                      {syncing ? <Loader2 size={16} className="animate-spin" /> : '🎬'}
                     </button>
                     <button
                       onClick={() => handleDelete(project.id, project.title)}

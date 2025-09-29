@@ -5,7 +5,7 @@ import { getLatestProjectThumbnails } from '../lib/supabase';
 
 const Home = () => {
   const [thumbnails, setThumbnails] = useState<{ [categorySlug: string]: string }>({});
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchThumbnails = async () => {
@@ -51,18 +51,30 @@ const Home = () => {
             {categoryName}
           </span>
 
-          {/* Thumbnail Image */}
+          {/* Thumbnail Image or Video */}
           {thumbnail && (
-            <div 
+            <div
               className={`absolute inset-0 transition-opacity duration-300 ${
                 isHovered ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <img 
-                src={thumbnail}
-                alt={`Latest ${categoryName} project`}
-                className="w-full h-full object-cover group-hover:opacity-90"
-              />
+              {thumbnail.includes('.mp4') || thumbnail.includes('.webm') || thumbnail.includes('.mov') || thumbnail.includes('video') ? (
+                <video
+                  src={thumbnail}
+                  className="w-full h-full object-cover group-hover:opacity-90"
+                  muted
+                  autoPlay
+                  loop
+                  playsInline
+                  style={{ pointerEvents: 'none' }}
+                />
+              ) : (
+                <img
+                  src={thumbnail}
+                  alt={`Latest ${categoryName} project`}
+                  className="w-full h-full object-cover group-hover:opacity-90"
+                />
+              )}
             </div>
           )}
         </div>

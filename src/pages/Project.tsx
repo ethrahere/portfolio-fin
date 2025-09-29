@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
+import VideoGallery from '../components/VideoGallery';
 import { getProject, Project as ProjectType } from '../lib/supabase';
 
 const Project = () => {
@@ -56,6 +57,8 @@ const Project = () => {
   }
 
   const projectImages = project.images?.map(img => img.image_url) || [];
+  const projectVideos = project.videos?.map(vid => vid.video_url) || [];
+
 
   return (
     <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
@@ -81,44 +84,88 @@ const Project = () => {
           </header>
 
           {/* Project Gallery + Audio Player Side by Side */}
-          <div className="flex flex-col md:flex-row md:items-start md:gap-12">
-            <div className="flex-1">
-              <ImageGallery 
-                images={projectImages}
+          {projectImages.length > 0 && (
+            <div className="flex flex-col md:flex-row md:items-start md:gap-12">
+              <div className="flex-1">
+                <ImageGallery
+                  images={projectImages}
+                  projectTitle={project.title}
+                />
+              </div>
+              {/* Project Audio Playlist */}
+              {project.audios && project.audios.length > 0 && (
+                <aside className="w-full md:w-80 mt-8 md:mt-0 md:pl-8">
+                  <h2 className="text-sm font-mono mb-8 tracking-widest">AUDIO</h2>
+                  <div className="space-y-4">
+                    <audio
+                      controls
+                      className="w-full outline-none border border-black rounded bg-white mb-4"
+                      src={project.audios[selectedTrack]?.audio_url}
+                      key={project.audios[selectedTrack]?.id}
+                    >
+                      <source src={project.audios[selectedTrack]?.audio_url} type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                    <ul className="space-y-2">
+                      {project.audios.map((audio, idx) => (
+                        <li key={audio.id}>
+                          <button
+                            className={`text-xs font-mono truncate w-full text-left px-2 py-1 rounded transition-colors ${selectedTrack === idx ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}`}
+                            onClick={() => setSelectedTrack(idx)}
+                            title={audio.title}
+                          >
+                            {audio.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </aside>
+              )}
+            </div>
+          )}
+
+          {/* Audio Player Only (when no images) */}
+          {projectImages.length === 0 && project.audios && project.audios.length > 0 && (
+            <div className="max-w-md">
+              <h2 className="text-sm font-mono mb-8 tracking-widest">AUDIO</h2>
+              <div className="space-y-4">
+                <audio
+                  controls
+                  className="w-full outline-none border border-black rounded bg-white mb-4"
+                  src={project.audios[selectedTrack]?.audio_url}
+                  key={project.audios[selectedTrack]?.id}
+                >
+                  <source src={project.audios[selectedTrack]?.audio_url} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+                <ul className="space-y-2">
+                  {project.audios.map((audio, idx) => (
+                    <li key={audio.id}>
+                      <button
+                        className={`text-xs font-mono truncate w-full text-left px-2 py-1 rounded transition-colors ${selectedTrack === idx ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}`}
+                        onClick={() => setSelectedTrack(idx)}
+                        title={audio.title}
+                      >
+                        {audio.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Project Videos */}
+          {projectVideos.length > 0 && (
+            <div>
+              <h2 className="text-sm font-mono mb-8 tracking-widest">VIDEOS</h2>
+              <VideoGallery
+                videos={projectVideos}
                 projectTitle={project.title}
               />
             </div>
-            {/* Project Audio Playlist */}
-            {project.audios && project.audios.length > 0 && (
-              <aside className="w-full md:w-80 mt-8 md:mt-0 md:pl-8">
-                <h2 className="text-sm font-mono mb-8 tracking-widest">AUDIO</h2>
-                <div className="space-y-4">
-                  <audio
-                    controls
-                    className="w-full outline-none border border-black rounded bg-white mb-4"
-                    src={project.audios[selectedTrack]?.audio_url}
-                    key={project.audios[selectedTrack]?.id}
-                  >
-                    <source src={project.audios[selectedTrack]?.audio_url} type="audio/mpeg" />
-                    Your browser does not support the audio element.
-                  </audio>
-                  <ul className="space-y-2">
-                    {project.audios.map((audio, idx) => (
-                      <li key={audio.id}>
-                        <button
-                          className={`text-xs font-mono truncate w-full text-left px-2 py-1 rounded transition-colors ${selectedTrack === idx ? 'bg-black text-white' : 'bg-gray-100 text-black hover:bg-gray-200'}`}
-                          onClick={() => setSelectedTrack(idx)}
-                          title={audio.title}
-                        >
-                          {audio.title}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </aside>
-            )}
-          </div>
+          )}
 
           {/* Project Description */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">

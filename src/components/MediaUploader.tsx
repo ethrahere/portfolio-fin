@@ -56,9 +56,10 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
 
         // Upload file
         uploadFile(file, updatedFiles.length - 1);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('File validation error:', error);
-        alert(`File ${file.name}: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        alert(`File ${file.name}: ${errorMessage}`);
       }
     });
   };
@@ -83,15 +84,16 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
       };
       onFilesChange(updatedFiles);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       // Update file with error
       const updatedFiles = [...files];
       updatedFiles[fileIndex] = {
         ...updatedFiles[fileIndex],
         isUploading: false,
-        error: error.message
+        error: errorMessage
       };
       onFilesChange(updatedFiles);
     }
