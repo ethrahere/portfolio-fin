@@ -34,6 +34,7 @@ const AdminEnhanced = () => {
     year: new Date().getFullYear(),
     medium: '',
     dimensions: '',
+    app_link: '',
     categoryIds: [] as string[]
   });
   
@@ -136,6 +137,7 @@ const AdminEnhanced = () => {
       year: new Date().getFullYear(),
       medium: '',
       dimensions: '',
+      app_link: '',
       categoryIds: []
     });
     setCurrentProjectId('');
@@ -154,9 +156,10 @@ const AdminEnhanced = () => {
       year: project.year,
       medium: project.medium,
       dimensions: project.dimensions,
+      app_link: project.app_link || '',
       categoryIds: project.categories?.map(c => c.id) || []
     });
-    
+
     setShowForm(true);
   };
 
@@ -372,6 +375,21 @@ const AdminEnhanced = () => {
                         required
                         disabled={saving}
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-mono mb-2">APP LINK (Optional - for Apps category)</label>
+                      <input
+                        type="url"
+                        value={formData.app_link}
+                        onChange={(e) => setFormData(prev => ({ ...prev, app_link: e.target.value }))}
+                        placeholder="https://example.com/your-app"
+                        className="w-full p-3 border border-black bg-white font-mono text-sm"
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-gray-500 font-mono mt-1">
+                        Add a link to your app. This will be shown on the project page with a "VISIT APP" button.
+                      </p>
                     </div>
 
                     <div>

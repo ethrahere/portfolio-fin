@@ -95,7 +95,7 @@ const Home = () => {
         {/* Main Grid */}
         <main className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 flex-1 auto-rows-fr">
           <CategoryBox to="/3d" categoryName="3D" categorySlug="3d" />
-          <CategoryBox to="/design" categoryName="DESIGN" categorySlug="design" />
+          <CategoryBox to="/apps" categoryName="APPS" categorySlug="apps" />
           <CategoryBox to="/music" categoryName="MUSIC" categorySlug="music" />
           <CategoryBox to="/essays" categoryName="ESSAYS" categorySlug="essays" />
         </main>

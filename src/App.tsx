@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Home from './pages/Home';
 import ThreeD from './pages/ThreeD';
-import Design from './pages/Design';
+import Apps from './pages/Apps';
 import Music from './pages/Music';
 import Essays from './pages/Essays';
 import Project from './pages/Project';
@@ -16,7 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/3d" element={<ThreeD />} />
-          <Route path="/design" element={<Design />} />
+          <Route path="/apps" element={<Apps />} />
           <Route path="/music" element={<Music />} />
           <Route path="/essays" element={<Essays />} />
           <Route path="/project/:category/:id" element={<Project />} />

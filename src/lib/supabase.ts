@@ -28,6 +28,7 @@ export interface Project {
   dimensions: string;
   thumbnail_url?: string;
   category_id?: string; // Keep for backward compatibility
+  app_link?: string; // URL link for app projects
   display_order: number;
   created_at: string;
   updated_at: string;

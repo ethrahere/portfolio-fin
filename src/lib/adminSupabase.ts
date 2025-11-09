@@ -7,6 +7,7 @@ export interface CreateProjectData {
   year: number;
   medium: string;
   dimensions: string;
+  app_link?: string;
   categoryIds: string[];
   displayOrder?: number;
 }

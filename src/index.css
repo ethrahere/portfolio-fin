@@ -9,7 +9,7 @@ body {
 
 body {
   margin: 0;
-  background-image: url('/bg3.png');
+  /* background-image: url('/bg3.png'); */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

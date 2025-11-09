@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
 import { getProject, Project as ProjectType } from '../lib/supabase';
@@ -182,6 +182,20 @@ const Project = () => {
               <h2 className="text-sm font-mono mb-8 tracking-widest">
                 DETAILS
               </h2>
+
+              {/* App Link - Only show for apps category */}
+              {project.app_link && (
+                <a
+                  href={project.app_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 mb-8 text-sm font-mono border border-black hover:bg-black hover:text-white px-4 py-3 transition-colors duration-300 w-full"
+                >
+                  VISIT APP
+                  <ExternalLink size={16} />
+                </a>
+              )}
+
               <dl className="space-y-4 text-sm">
                 <div>
                   <dt className="font-mono text-gray-600">YEAR</dt>
