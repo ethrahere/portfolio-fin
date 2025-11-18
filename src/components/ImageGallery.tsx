@@ -9,14 +9,31 @@ interface ImageGalleryProps {
 const ImageGallery: React.FC<ImageGalleryProps> = ({ images, projectTitle }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Preload adjacent images for faster navigation
+  React.useEffect(() => {
+    if (images.length <= 1) return;
+
+    const preloadImage = (src: string) => {
+      const img = new Image();
+      img.src = src;
+    };
+
+    // Preload next and previous images
+    const nextIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
+    const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+
+    preloadImage(images[nextIndex]);
+    preloadImage(images[prevIndex]);
+  }, [currentIndex, images]);
+
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => 
+    setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? images.length - 1 : prevIndex - 1
     );
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => 
+    setCurrentIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1
     );
   };
@@ -37,11 +54,12 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, projectTitle }) => 
     <div className="flex flex-col gap-4">
       {/* Main Image Display */}
       <div>
-        <div className="relative group inline-block">
-          <img 
+        <div className="relative group inline-block border border-black bg-gray-100">
+          <img
             src={images[currentIndex]}
             alt={`${projectTitle} - Image ${currentIndex + 1}`}
-            className="max-h-[70vh] w-auto border border-black bg-gray-100 block"
+            className="max-h-[70vh] w-auto block"
+            loading="eager"
           />
           
           {/* Navigation Arrows - Only show if more than 1 image */}
@@ -87,10 +105,11 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, projectTitle }) => 
                 index === currentIndex ? 'border-black' : 'border-gray-300'
               }`}
             >
-              <img 
+              <img
                 src={image}
                 alt={`${projectTitle} thumbnail ${index + 1}`}
                 className="h-full w-full object-cover"
+                loading="lazy"
               />
             </button>
           ))}
