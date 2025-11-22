@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit2, Trash2, Eye, X, Save, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  getAllProjectsAdmin, 
-  deleteProjectAdmin, 
-  createProjectAdmin, 
-  updateProjectAdmin, 
+import {
+  getAllProjectsAdmin,
+  deleteProjectAdmin,
+  createProjectAdmin,
+  updateProjectAdmin,
   generateSlug
 } from '../lib/adminSupabase';
 import { getCategories, Project, Category } from '../lib/supabase';
 import DatabaseMediaManager from '../components/DatabaseMediaManager';
+import MarkdownEditor from '../components/MarkdownEditor';
 import { syncOrphanedVideos } from '../lib/syncVideos';
 
 const AdminEnhanced = () => {
@@ -329,14 +330,11 @@ const AdminEnhanced = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-mono mb-2">DESCRIPTION</label>
-                      <textarea
+                      <label className="block text-sm font-mono mb-2">DESCRIPTION (Markdown supported)</label>
+                      <MarkdownEditor
                         value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        rows={4}
-                        className="w-full p-3 border border-black bg-white font-mono text-sm resize-none"
-                        required
-                        disabled={saving}
+                        onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                        placeholder="Enter description in Markdown... You can use **bold**, *italic*, [links](url), # headings, lists, and more!"
                       />
                     </div>
 

@@ -4,6 +4,8 @@ import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown } from '
 import { getProjectsByCategory, getThumbnailForProject, getProject, Project } from '../lib/supabase';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
+import MarkdownRenderer from '../components/MarkdownRenderer';
+import VineCursorCanvas from '../components/VineCursorCanvas';
 
 type ViewState =
   | { type: 'home' }
@@ -11,7 +13,7 @@ type ViewState =
   | { type: 'project'; categorySlug: string; projectSlug: string };
 
 const Home = () => {
-  const [viewState, setViewState] = useState<ViewState>({ type: 'category', slug: '3d', name: '3D' });
+  const [viewState, setViewState] = useState<ViewState>({ type: 'home' });
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,7 @@ const Home = () => {
     { slug: 'apps', name: 'APPS' },
     { slug: 'music', name: 'MUSIC' },
     { slug: 'essays', name: 'ESSAYS' },
+    { slug: 'resources', name: 'RESOURCES' },
   ];
 
   // Load projects when category is selected
@@ -257,9 +260,7 @@ const Home = () => {
                 <h2 className="text-sm font-mono mb-4 tracking-widest">
                   DESCRIPTION
                 </h2>
-                <p className="text-base leading-relaxed">
-                  {currentProject.description}
-                </p>
+                <MarkdownRenderer content={currentProject.description} />
               </div>
 
               <div>
@@ -301,14 +302,10 @@ const Home = () => {
       );
     }
 
-    // Home view - show welcome message or empty state
+    // Home view - show interactive garden canvas
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <p className="text-lg font-mono tracking-widest text-gray-400">
-            SELECT A CATEGORY
-          </p>
-        </div>
+      <div className="w-full h-full">
+        <VineCursorCanvas />
       </div>
     );
   };

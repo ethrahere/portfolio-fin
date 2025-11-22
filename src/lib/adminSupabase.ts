@@ -410,6 +410,29 @@ export const generateSlug = (title: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
+// Category management
+export const createCategory = async (name: string, slug: string, displayOrder: number) => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name,
+        slug,
+        display_order: displayOrder
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, category: data };
+  } catch (error: unknown) {
+    console.error('Create category error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { success: false, error: errorMessage };
+  }
+};
+
 // Utility functions
 export const validateImageFile = (file: File): boolean => {
   const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];

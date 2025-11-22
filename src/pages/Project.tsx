@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
+import MarkdownRenderer from '../components/MarkdownRendererDebug';
 import { getProject, Project as ProjectType } from '../lib/supabase';
 
 const Project = () => {
@@ -173,9 +174,7 @@ const Project = () => {
               <h2 className="text-sm font-mono mb-8 tracking-widest">
                 DESCRIPTION
               </h2>
-              <p className="text-base leading-relaxed">
-                {project.description}
-              </p>
+              <MarkdownRenderer content={project.description} />
             </div>
             
             <div>

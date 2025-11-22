@@ -6,6 +6,7 @@ import ThreeD from './pages/ThreeD';
 import Apps from './pages/Apps';
 import Music from './pages/Music';
 import Essays from './pages/Essays';
+import Resources from './pages/Resources';
 import Project from './pages/Project';
 import AdminEnhanced from './pages/AdminEnhanced';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/apps" element={<Apps />} />
           <Route path="/music" element={<Music />} />
           <Route path="/essays" element={<Essays />} />
+          <Route path="/resources" element={<Resources />} />
           <Route path="/project/:category/:id" element={<Project />} />
           <Route path="/admin" element={<AdminEnhanced />} />
         </Routes>
