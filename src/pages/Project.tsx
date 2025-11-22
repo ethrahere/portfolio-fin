@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
-import MarkdownRenderer from '../components/MarkdownRendererDebug';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 import { getProject, Project as ProjectType } from '../lib/supabase';
 
 const Project = () => {
