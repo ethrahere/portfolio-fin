@@ -153,12 +153,20 @@ const Leaf: React.FC<{ data: OrganicElement }> = ({ data }) => {
 /**
  * Main Scene Logic
  */
-const InteractiveGarden: React.FC = () => {
+const InteractiveGarden: React.FC<{ mouseEntered: boolean }> = ({ mouseEntered }) => {
   const { viewport, pointer } = useThree();
 
   const [points, setPoints] = useState<TrailPoint[]>([]);
   const [elements, setElements] = useState<OrganicElement[]>([]);
   const elementIdCounter = useRef(0);
+  const hasMouseEntered = useRef(false);
+
+  // Update the ref when mouseEntered prop changes
+  useEffect(() => {
+    if (mouseEntered) {
+      hasMouseEntered.current = true;
+    }
+  }, [mouseEntered]);
 
   useFrame(({ clock }) => {
     const now = clock.elapsedTime * 1000;
@@ -172,9 +180,9 @@ const InteractiveGarden: React.FC = () => {
     let newElements = [...elements];
     let needsStateUpdate = false;
 
-    // 2. Add new point logic
+    // 2. Add new point logic - only if mouse has entered the canvas
     const lastPoint = newPoints[newPoints.length - 1];
-    if (!lastPoint || currentPos.distanceTo(lastPoint.position) > MIN_DISTANCE) {
+    if (hasMouseEntered.current && (!lastPoint || currentPos.distanceTo(lastPoint.position) > MIN_DISTANCE)) {
       needsStateUpdate = true;
 
       const offset1 = new THREE.Vector3((Math.random() - 0.5) * 0.2, (Math.random() - 0.5) * 0.2, 0);
@@ -301,8 +309,13 @@ const InteractiveGarden: React.FC = () => {
 };
 
 const VineCursorCanvas: React.FC = () => {
+  const [mouseEntered, setMouseEntered] = React.useState(false);
+
   return (
-    <div className="w-full h-full relative">
+    <div
+      className="w-full h-full relative"
+      onMouseEnter={() => setMouseEntered(true)}
+    >
       {/* Beautiful cursive "hi" text in the background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <h1
@@ -329,7 +342,7 @@ const VineCursorCanvas: React.FC = () => {
           gl.setClearColor(new THREE.Color('#ffffff'), 0); // Transparent background
         }}
       >
-        <InteractiveGarden />
+        <InteractiveGarden mouseEntered={mouseEntered} />
       </Canvas>
     </div>
   );
