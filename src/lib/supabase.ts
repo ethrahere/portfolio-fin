@@ -185,7 +185,8 @@ export const getThumbnailForProject = (project: Project): string => {
   // Fifth priority: Use the first video
   if (project.videos?.[0]) return project.videos[0].video_url;
 
-  return '';
+  // Default: Return a white 1x1 pixel data URL
+  return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ffffff"/%3E%3C/svg%3E';
 };
 
 // Helper to convert storage URLs to signed URLs if needed
