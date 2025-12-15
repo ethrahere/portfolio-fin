@@ -317,7 +317,7 @@ const VineCursorCanvas: React.FC = () => {
       onMouseEnter={() => setMouseEntered(true)}
     >
       {/* Beautiful cursive "hi" text in the background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
         <h1
           className="text-[20vw] font-bold text-gray-200 select-none"
           style={{
@@ -327,6 +327,9 @@ const VineCursorCanvas: React.FC = () => {
         >
           hi
         </h1>
+        <p className="text-sm md:text-base font-mono text-gray-400 tracking-widest mt-8 select-none">
+          MOVE YOUR CURSOR TO GROW VINES
+        </p>
       </div>
 
       {/* 3D Canvas with vines and flowers on top */}

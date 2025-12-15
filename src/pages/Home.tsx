@@ -27,6 +27,7 @@ const Home = () => {
     { slug: 'music', name: 'MUSIC' },
     { slug: 'essays', name: 'ESSAYS' },
     { slug: 'resources', name: 'RESOURCES' },
+    { slug: 'bio', name: 'BIO' },
   ];
 
   // Load projects when category is selected
@@ -100,8 +101,60 @@ const Home = () => {
       );
     }
 
-    // Category view - show projects grid
+    // Category view - show projects grid (or bio content)
     if (viewState.type === 'category') {
+      // Special handling for bio - show content directly
+      if (viewState.slug === 'bio' && projects.length > 0) {
+        const bioProject = projects[0];
+        const bioImages = bioProject.images?.map(img => img.image_url) || [];
+
+        return (
+          <div className="h-full flex flex-col overflow-y-auto scrollbar-hide">
+            {/* Back button */}
+            <button
+              onClick={handleBackClick}
+              className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8"
+            >
+              <ArrowLeft size={16} />
+              BACK
+            </button>
+
+            {/* Bio Content */}
+            <div className="space-y-12">
+              <header>
+                <h1 className="text-2xl md:text-3xl font-mono tracking-wide mb-4">
+                  {bioProject.title}
+                </h1>
+              </header>
+
+              {/* Bio Images - Simple Grid */}
+              {bioImages.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {bioImages.map((imageUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="border border-black overflow-hidden"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`${bioProject.title} - Image ${idx + 1}`}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Bio Description */}
+              <div className="prose prose-sm max-w-none">
+                <MarkdownRenderer content={bioProject.description} />
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Regular category view - show projects grid
       return (
         <div className="h-full flex flex-col">
           {/* Back button */}
