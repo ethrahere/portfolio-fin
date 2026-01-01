@@ -1,0 +1,37 @@
+# robots.txt for ETHRA Portfolio
+# Allow all search engines and AI crawlers to index the site
+
+User-agent: *
+Allow: /
+
+# Allow all AI crawlers specifically
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Omgilibot
+Allow: /
+
+# Disallow admin area from being indexed
+User-agent: *
+Disallow: /admin
+
+# Sitemap location
+Sitemap: https://ethra.art/sitemap.xml
