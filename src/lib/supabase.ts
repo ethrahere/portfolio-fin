@@ -29,6 +29,7 @@ export interface Project {
   thumbnail_url?: string;
   category_id?: string; // Keep for backward compatibility
   app_link?: string; // URL link for app projects
+  price?: string; // Price for sale (objects category)
   display_order: number;
   created_at: string;
   updated_at: string;
@@ -221,6 +222,132 @@ export const getSignedUrl = async (storageUrl: string, bucket: string = 'images'
 
   // Return original URL if conversion fails
   return storageUrl;
+};
+
+// ─── Community Types ─────────────────────────────────────────────────────────
+
+export interface ProjectComment {
+  id: string;
+  project_id: string;
+  name: string;
+  email?: string;
+  content: string;
+  is_approved: boolean;
+  created_at: string;
+}
+
+export interface CollaborationRequest {
+  id: string;
+  name: string;
+  email: string;
+  project_type?: string;
+  message: string;
+  status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+}
+
+// ─── Community Queries ────────────────────────────────────────────────────────
+
+/** Fetch approved comments for a project (public) */
+export const getApprovedComments = async (projectId: string): Promise<ProjectComment[]> => {
+  const { data, error } = await supabase
+    .from('project_comments')
+    .select('*')
+    .eq('project_id', projectId)
+    .eq('is_approved', true)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+};
+
+/** Submit a new comment (held for admin approval) */
+export const submitComment = async (
+  projectId: string,
+  name: string,
+  content: string,
+  email?: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('project_comments')
+    .insert({ project_id: projectId, name, content, email: email || null });
+  if (error) throw error;
+};
+
+/** Submit a collaboration request */
+export const submitCollaborationRequest = async (
+  name: string,
+  email: string,
+  message: string,
+  projectType?: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('collaboration_requests')
+    .insert({ name, email, message, project_type: projectType || null });
+  if (error) throw error;
+};
+
+// ─── Admin Community Queries ──────────────────────────────────────────────────
+
+/** Fetch ALL comments for admin (approved + pending) */
+export const getAllCommentsAdmin = async (): Promise<(ProjectComment & { project_title?: string })[]> => {
+  const { data, error } = await supabase
+    .from('project_comments')
+    .select('*, project:projects(title)')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((c: ProjectComment & { project?: { title: string } }) => ({
+    ...c,
+    project_title: c.project?.title
+  }));
+};
+
+/** Approve or reject a comment */
+export const updateCommentApproval = async (commentId: string, approved: boolean): Promise<void> => {
+  const { error } = await supabase
+    .from('project_comments')
+    .update({ is_approved: approved })
+    .eq('id', commentId);
+  if (error) throw error;
+};
+
+/** Delete a comment */
+export const deleteComment = async (commentId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('project_comments')
+    .delete()
+    .eq('id', commentId);
+  if (error) throw error;
+};
+
+/** Fetch all collaboration requests for admin */
+export const getAllCollaborationRequests = async (): Promise<CollaborationRequest[]> => {
+  const { data, error } = await supabase
+    .from('collaboration_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+/** Update status of a collaboration request */
+export const updateCollaborationStatus = async (
+  requestId: string,
+  status: 'pending' | 'accepted' | 'declined'
+): Promise<void> => {
+  const { error } = await supabase
+    .from('collaboration_requests')
+    .update({ status })
+    .eq('id', requestId);
+  if (error) throw error;
+};
+
+/** Delete a collaboration request */
+export const deleteCollaborationRequest = async (requestId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('collaboration_requests')
+    .delete()
+    .eq('id', requestId);
+  if (error) throw error;
 };
 
 // Get latest project thumbnail for each category

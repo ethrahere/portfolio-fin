@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown } from 'lucide-react';
+import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown, MessageSquare } from 'lucide-react';
 import { getProjectsByCategory, getThumbnailForProject, getProject, Project } from '../lib/supabase';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
@@ -23,12 +23,16 @@ const Home = () => {
 
   const categories = [
     { slug: '3d', name: '3D' },
+    { slug: 'objects', name: 'OBJECTS' },
     { slug: 'apps', name: 'APPS' },
     { slug: 'music', name: 'MUSIC' },
     { slug: 'essays', name: 'ESSAYS' },
     { slug: 'resources', name: 'RESOURCES' },
     { slug: 'bio', name: 'BIO' },
   ];
+
+  // Replace with your actual Discord invite URL
+  const DISCORD_URL = 'https://discord.gg/5kDsbhbF';
 
   // Load projects when category is selected
   useEffect(() => {
@@ -335,6 +339,12 @@ const Home = () => {
                 )}
 
                 <dl className="space-y-4 text-sm">
+                  {currentProject.price && (
+                    <div>
+                      <dt className="font-mono text-gray-600">PRICE</dt>
+                      <dd className="font-mono">{currentProject.price}</dd>
+                    </div>
+                  )}
                   <div>
                     <dt className="font-mono text-gray-600">YEAR</dt>
                     <dd>{currentProject.year}</dd>
@@ -432,6 +442,22 @@ const Home = () => {
 
               {showContactDropdown && (
                 <div className="absolute right-0 top-full mt-1 bg-white border border-black shadow-lg z-50">
+                  <Link
+                    to="/collaborate"
+                    onClick={() => setShowContactDropdown(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-mono hover:bg-black hover:text-white transition-colors whitespace-nowrap border-b border-gray-200"
+                  >
+                    COLLABORATE
+                  </Link>
+                  <a
+                    href={DISCORD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-mono hover:bg-black hover:text-white transition-colors whitespace-nowrap border-b border-gray-200"
+                  >
+                    <MessageSquare size={16} />
+                    DISCORD
+                  </a>
                   <a
                     href="https://instagram.com/ethra.here"
                     target="_blank"
@@ -494,9 +520,28 @@ const Home = () => {
             </nav>
           </div>
 
-          {/* Fixed Footer - Contact Section */}
+          {/* Fixed Footer - Contact + Community Section */}
           <footer className="border-t border-black p-8 md:px-16 md:pb-16 bg-white flex-shrink-0">
-            <div className="mb-6">
+            {/* Community links */}
+            <div className="mb-6 flex flex-col gap-2">
+              <Link
+                to="/collaborate"
+                className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300"
+              >
+                COLLABORATE
+              </Link>
+              <a
+                href={DISCORD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300 flex items-center justify-center gap-2"
+              >
+                <MessageSquare size={14} />
+                DISCORD
+              </a>
+            </div>
+
+            <div className="mb-4">
               <span className="text-sm md:text-base font-mono">
                 CONTACT
               </span>

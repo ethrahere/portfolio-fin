@@ -6,6 +6,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import Comments from '../components/Comments';
 import { getProject, Project as ProjectType } from '../lib/supabase';
 
 const Project = () => {
@@ -320,6 +321,12 @@ const Project = () => {
               )}
 
               <dl className="space-y-4 text-sm">
+                {project.price && (
+                  <div>
+                    <dt className="font-mono text-gray-600">PRICE</dt>
+                    <dd className="font-mono">{project.price}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="font-mono text-gray-600">YEAR</dt>
                   <dd>{project.year}</dd>
@@ -335,6 +342,8 @@ const Project = () => {
               </dl>
             </div>
           </div>
+          {/* Comments */}
+          <Comments projectId={project.id} />
         </div>
         </article>
       </div>

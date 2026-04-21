@@ -8,6 +8,7 @@ export interface CreateProjectData {
   medium: string;
   dimensions: string;
   app_link?: string;
+  price?: string;
   categoryIds: string[];
   displayOrder?: number;
 }

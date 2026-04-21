@@ -9,7 +9,19 @@ import {
   updateProjectAdmin,
   generateSlug
 } from '../lib/adminSupabase';
-import { getCategories, Project, Category } from '../lib/supabase';
+import {
+  getCategories,
+  Project,
+  Category,
+  ProjectComment,
+  CollaborationRequest,
+  getAllCommentsAdmin,
+  updateCommentApproval,
+  deleteComment,
+  getAllCollaborationRequests,
+  updateCollaborationStatus,
+  deleteCollaborationRequest,
+} from '../lib/supabase';
 import DatabaseMediaManager from '../components/DatabaseMediaManager';
 import MarkdownEditor from '../components/MarkdownEditor';
 import { syncOrphanedVideos } from '../lib/syncVideos';
@@ -36,17 +48,46 @@ const AdminEnhanced = () => {
     medium: '',
     dimensions: '',
     app_link: '',
+    price: '',
     categoryIds: [] as string[]
   });
   
   // Current editing project ID for media management
   const [currentProjectId, setCurrentProjectId] = useState<string>('');
 
+  // Community state
+  const [activeTab, setActiveTab] = useState<'projects' | 'comments' | 'collaborate'>('projects');
+  const [comments, setComments] = useState<(ProjectComment & { project_title?: string })[]>([]);
+  const [collaborations, setCollaborations] = useState<CollaborationRequest[]>([]);
+  const [communityLoading, setCommunityLoading] = useState(false);
+
   useEffect(() => {
     if (isAdmin) {
       fetchData();
     }
   }, [isAdmin]);
+
+  const fetchCommunityData = async () => {
+    setCommunityLoading(true);
+    try {
+      const [commentsData, collabData] = await Promise.all([
+        getAllCommentsAdmin(),
+        getAllCollaborationRequests(),
+      ]);
+      setComments(commentsData);
+      setCollaborations(collabData);
+    } catch (e) {
+      console.error('Error fetching community data:', e);
+    } finally {
+      setCommunityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin && (activeTab === 'comments' || activeTab === 'collaborate')) {
+      fetchCommunityData();
+    }
+  }, [isAdmin, activeTab]);
 
   const fetchData = async () => {
     try {
@@ -139,6 +180,7 @@ const AdminEnhanced = () => {
       medium: '',
       dimensions: '',
       app_link: '',
+      price: '',
       categoryIds: []
     });
     setCurrentProjectId('');
@@ -158,6 +200,7 @@ const AdminEnhanced = () => {
       medium: project.medium,
       dimensions: project.dimensions,
       app_link: project.app_link || '',
+      price: project.price || '',
       categoryIds: project.categories?.map(c => c.id) || []
     });
 
@@ -276,6 +319,21 @@ const AdminEnhanced = () => {
           </div>
         </header>
 
+        {/* Tab Navigation */}
+        <div className="flex gap-0 mb-12 border border-black">
+          {(['projects', 'comments', 'collaborate'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-xs font-mono tracking-widest transition-colors ${
+                activeTab === tab ? 'bg-black text-white' : 'hover:bg-gray-100'
+              }`}
+            >
+              {tab === 'projects' ? `PROJECTS (${projects.length})` : tab === 'comments' ? 'COMMENTS' : 'COLLABORATE'}
+            </button>
+          ))}
+        </div>
+
         {/* Error Alert */}
         {error && (
           <div className="mb-8 p-4 border border-red-500 bg-red-50 flex items-start gap-3">
@@ -391,6 +449,21 @@ const AdminEnhanced = () => {
                     </div>
 
                     <div>
+                      <label className="block text-sm font-mono mb-2">PRICE (Optional - for Objects category)</label>
+                      <input
+                        type="text"
+                        value={formData.price}
+                        onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                        placeholder="e.g. £45 or $60"
+                        className="w-full p-3 border border-black bg-white font-mono text-sm"
+                        disabled={saving}
+                      />
+                      <p className="text-xs text-gray-500 font-mono mt-1">
+                        Set a price for physical objects available for sale. Shown on the listing and project page.
+                      </p>
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-mono mb-2">CATEGORIES</label>
                       <div className="space-y-2">
                         {categories.map(category => (
@@ -487,67 +560,249 @@ const AdminEnhanced = () => {
           </div>
         )}
 
-        {/* Projects List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-mono mb-8">PROJECTS ({projects.length})</h2>
-          
-          {projects.length === 0 ? (
-            <div className="text-center py-16 text-sm font-mono text-gray-500">
-              NO PROJECTS YET
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {projects.map(project => (
-                <div key={project.id} className="border border-black p-4 flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-mono text-sm font-bold mb-1">{project.title}</h3>
-                    <p className="text-xs font-mono text-gray-600 mb-2">
-                      {project.categories?.map(c => c.name).join(', ')} • {project.year}
-                    </p>
-                    <p className="text-xs text-gray-500 line-clamp-2 mb-1">
-                      {project.description.substring(0, 100)}...
-                    </p>
-                    <div className="text-xs text-gray-400">
-                      {project.images?.length || 0} images • {project.audios?.length || 0} audio files • {project.videos?.length || 0} videos
+        {/* ── PROJECTS TAB ── */}
+        {activeTab === 'projects' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-mono mb-8">PROJECTS ({projects.length})</h2>
+
+            {projects.length === 0 ? (
+              <div className="text-center py-16 text-sm font-mono text-gray-500">
+                NO PROJECTS YET
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {projects.map(project => (
+                  <div key={project.id} className="border border-black p-4 flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-mono text-sm font-bold mb-1">{project.title}</h3>
+                      <p className="text-xs font-mono text-gray-600 mb-2">
+                        {project.categories?.map(c => c.name).join(', ')} • {project.year}
+                      </p>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-1">
+                        {project.description.substring(0, 100)}...
+                      </p>
+                      <div className="text-xs text-gray-400">
+                        {project.images?.length || 0} images • {project.audios?.length || 0} audio files • {project.videos?.length || 0} videos
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      <Link
+                        to={`/project/${project.categories?.[0]?.slug || 'design'}/${project.slug}`}
+                        className="p-2 border border-black hover:bg-black hover:text-white transition-colors"
+                        title="View project"
+                      >
+                        <Eye size={16} />
+                      </Link>
+                      <button
+                        onClick={() => startEdit(project)}
+                        className="p-2 border border-black hover:bg-black hover:text-white transition-colors"
+                        title="Edit project"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleSyncVideos(project.id)}
+                        disabled={syncing}
+                        className="p-2 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors disabled:opacity-50"
+                        title="Sync orphaned videos from storage"
+                      >
+                        {syncing ? <Loader2 size={16} className="animate-spin" /> : '🎬'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(project.id, project.title)}
+                        className="p-2 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                        title="Delete project"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
-                    <Link
-                      to={`/project/${project.categories?.[0]?.slug || 'design'}/${project.slug}`}
-                      className="p-2 border border-black hover:bg-black hover:text-white transition-colors"
-                      title="View project"
-                    >
-                      <Eye size={16} />
-                    </Link>
-                    <button
-                      onClick={() => startEdit(project)}
-                      className="p-2 border border-black hover:bg-black hover:text-white transition-colors"
-                      title="Edit project"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleSyncVideos(project.id)}
-                      disabled={syncing}
-                      className="p-2 border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors disabled:opacity-50"
-                      title="Sync orphaned videos from storage"
-                    >
-                      {syncing ? <Loader2 size={16} className="animate-spin" /> : '🎬'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(project.id, project.title)}
-                      className="p-2 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                      title="Delete project"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── COMMENTS TAB ── */}
+        {activeTab === 'comments' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-mono">COMMENTS ({comments.length})</h2>
+              <button onClick={fetchCommunityData} className="text-xs font-mono underline hover:no-underline">REFRESH</button>
             </div>
-          )}
-        </div>
+
+            {communityLoading ? (
+              <div className="text-sm font-mono text-gray-400">LOADING...</div>
+            ) : comments.length === 0 ? (
+              <div className="text-sm font-mono text-gray-400 py-16 text-center">NO COMMENTS YET</div>
+            ) : (
+              <div className="grid gap-4">
+                {comments.map(comment => (
+                  <div
+                    key={comment.id}
+                    className={`border p-4 ${comment.is_approved ? 'border-black' : 'border-gray-300 bg-gray-50'}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <span className="text-sm font-mono font-bold">{comment.name}</span>
+                          {comment.email && (
+                            <span className="text-xs font-mono text-gray-400">{comment.email}</span>
+                          )}
+                          <span className="text-xs font-mono text-gray-400">
+                            {new Date(comment.created_at).toLocaleDateString()}
+                          </span>
+                          {comment.project_title && (
+                            <span className="text-xs font-mono border border-gray-300 px-2 py-0.5">
+                              {comment.project_title}
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs font-mono px-2 py-0.5 ${
+                              comment.is_approved
+                                ? 'bg-black text-white'
+                                : 'border border-gray-400 text-gray-500'
+                            }`}
+                          >
+                            {comment.is_approved ? 'APPROVED' : 'PENDING'}
+                          </span>
+                        </div>
+                        <p className="text-sm font-mono text-gray-700 leading-relaxed">{comment.content}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button
+                          onClick={async () => {
+                            await updateCommentApproval(comment.id, !comment.is_approved);
+                            fetchCommunityData();
+                          }}
+                          className={`text-xs font-mono px-3 py-1 border transition-colors ${
+                            comment.is_approved
+                              ? 'border-gray-400 text-gray-500 hover:bg-gray-100'
+                              : 'border-black hover:bg-black hover:text-white'
+                          }`}
+                        >
+                          {comment.is_approved ? 'HIDE' : 'APPROVE'}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Delete this comment?')) {
+                              await deleteComment(comment.id);
+                              fetchCommunityData();
+                            }
+                          }}
+                          className="text-xs font-mono px-3 py-1 border border-red-400 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                        >
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── COLLABORATE TAB ── */}
+        {activeTab === 'collaborate' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-xl font-mono">COLLABORATION REQUESTS ({collaborations.length})</h2>
+              <button onClick={fetchCommunityData} className="text-xs font-mono underline hover:no-underline">REFRESH</button>
+            </div>
+
+            {communityLoading ? (
+              <div className="text-sm font-mono text-gray-400">LOADING...</div>
+            ) : collaborations.length === 0 ? (
+              <div className="text-sm font-mono text-gray-400 py-16 text-center">NO REQUESTS YET</div>
+            ) : (
+              <div className="grid gap-4">
+                {collaborations.map(req => (
+                  <div
+                    key={req.id}
+                    className={`border p-4 ${
+                      req.status === 'accepted'
+                        ? 'border-black'
+                        : req.status === 'declined'
+                        ? 'border-gray-200 bg-gray-50 opacity-60'
+                        : 'border-black'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <span className="text-sm font-mono font-bold">{req.name}</span>
+                          <a
+                            href={`mailto:${req.email}`}
+                            className="text-xs font-mono text-gray-400 underline hover:no-underline"
+                          >
+                            {req.email}
+                          </a>
+                          <span className="text-xs font-mono text-gray-400">
+                            {new Date(req.created_at).toLocaleDateString()}
+                          </span>
+                          {req.project_type && (
+                            <span className="text-xs font-mono border border-gray-300 px-2 py-0.5">
+                              {req.project_type}
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs font-mono px-2 py-0.5 ${
+                              req.status === 'accepted'
+                                ? 'bg-black text-white'
+                                : req.status === 'declined'
+                                ? 'border border-gray-400 text-gray-400'
+                                : 'border border-black'
+                            }`}
+                          >
+                            {req.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-sm font-mono text-gray-700 leading-relaxed">{req.message}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        {req.status !== 'accepted' && (
+                          <button
+                            onClick={async () => {
+                              await updateCollaborationStatus(req.id, 'accepted');
+                              fetchCommunityData();
+                            }}
+                            className="text-xs font-mono px-3 py-1 border border-black hover:bg-black hover:text-white transition-colors"
+                          >
+                            ACCEPT
+                          </button>
+                        )}
+                        {req.status !== 'declined' && (
+                          <button
+                            onClick={async () => {
+                              await updateCollaborationStatus(req.id, 'declined');
+                              fetchCommunityData();
+                            }}
+                            className="text-xs font-mono px-3 py-1 border border-gray-400 text-gray-500 hover:bg-gray-100 transition-colors"
+                          >
+                            DECLINE
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Delete this request?')) {
+                              await deleteCollaborationRequest(req.id);
+                              fetchCommunityData();
+                            }
+                          }}
+                          className="text-xs font-mono px-3 py-1 border border-red-400 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                        >
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
