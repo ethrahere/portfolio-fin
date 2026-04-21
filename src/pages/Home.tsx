@@ -227,8 +227,32 @@ const Home = () => {
               </p>
             </header>
 
-            {/* Project Gallery + Audio Player Side by Side */}
-            {projectImages.length > 0 && (
+            {/* Objects: product grid with per-image name + price */}
+            {viewState.categorySlug === 'objects' && currentProject.images && currentProject.images.length > 0 && (
+              <div className="grid grid-cols-2 gap-6">
+                {currentProject.images.map((img) => (
+                  <div key={img.id}>
+                    <div className="aspect-square border border-black overflow-hidden mb-2">
+                      <img
+                        src={img.image_url}
+                        alt={img.alt_text || img.name || currentProject.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    {img.name && (
+                      <p className="text-xs font-mono tracking-widest">{img.name}</p>
+                    )}
+                    {img.price && (
+                      <p className="text-xs font-mono text-gray-600 mt-0.5">{img.price}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Project Gallery + Audio Player Side by Side (non-objects) */}
+            {viewState.categorySlug !== 'objects' && projectImages.length > 0 && (
               <div className="flex flex-col lg:flex-row lg:items-start lg:gap-8">
                 <div className="flex-1">
                   <ImageGallery
@@ -365,10 +389,26 @@ const Home = () => {
       );
     }
 
-    // Home view - show interactive garden canvas
+    // Home view
     return (
       <div className="w-full h-full">
-        <VineCursorCanvas />
+        {/* Mobile: show category list so navigation is obvious */}
+        <div className="lg:hidden flex flex-col gap-3 pt-4">
+          <p className="text-xs font-mono text-gray-400 tracking-widest mb-2">EXPLORE</p>
+          {categories.map((category) => (
+            <button
+              key={category.slug}
+              onClick={() => handleCategoryClick(category.slug, category.name)}
+              className="text-left text-lg font-mono tracking-widest border border-black px-6 py-4 hover:bg-black hover:text-white transition-colors duration-300"
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+        {/* Desktop: interactive vine canvas */}
+        <div className="hidden lg:block w-full h-full">
+          <VineCursorCanvas />
+        </div>
       </div>
     );
   };
