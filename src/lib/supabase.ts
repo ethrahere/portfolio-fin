@@ -44,6 +44,8 @@ export interface ProjectImage {
   project_id: string;
   image_url: string;
   alt_text: string;
+  name?: string;
+  price?: string;
   display_order: number;
   is_thumbnail: boolean;
   created_at: string;

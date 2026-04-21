@@ -24,6 +24,8 @@ interface DatabaseMediaFile {
   id: string;
   url: string;
   alt_text?: string;
+  name?: string;
+  price?: string;
   title?: string;
   display_order: number;
   is_thumbnail?: boolean;
@@ -68,6 +70,8 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
         id: file.id,
         url: file[type === 'image' ? 'image_url' : type === 'audio' ? 'audio_url' : 'video_url'],
         alt_text: file.alt_text,
+        name: file.name,
+        price: file.price,
         title: file.title,
         display_order: file.display_order || 0,
         is_thumbnail: file.is_thumbnail || false
@@ -206,8 +210,10 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
   const handleMetadataUpdate = async (fileId: string, updates: Partial<DatabaseMediaFile>) => {
     try {
       if (type === 'image') {
-        const updateData: { alt_text?: string; is_thumbnail?: boolean } = {};
+        const updateData: { alt_text?: string; name?: string; price?: string; is_thumbnail?: boolean } = {};
         if (updates.alt_text !== undefined) updateData.alt_text = updates.alt_text;
+        if (updates.name !== undefined) updateData.name = updates.name;
+        if (updates.price !== undefined) updateData.price = updates.price;
         if (updates.is_thumbnail !== undefined) {
           updateData.is_thumbnail = updates.is_thumbnail;
           
@@ -415,6 +421,20 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                   <div className="grid gap-2">
                     {type === 'image' ? (
                       <>
+                        <input
+                          type="text"
+                          placeholder="Item name (e.g. Silver Ring No.3)"
+                          value={file.name || ''}
+                          onChange={(e) => handleMetadataUpdate(file.id, { name: e.target.value })}
+                          className="text-xs font-mono border border-gray-300 px-2 py-1"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Price (e.g. £45)"
+                          value={file.price || ''}
+                          onChange={(e) => handleMetadataUpdate(file.id, { price: e.target.value })}
+                          className="text-xs font-mono border border-gray-300 px-2 py-1"
+                        />
                         <input
                           type="text"
                           placeholder="Alt text"

@@ -209,8 +209,32 @@ const Project = () => {
             </p>
           </header>
 
-          {/* Project Gallery + Audio Player Side by Side */}
-          {projectImages.length > 0 && (
+          {/* Objects category: product grid with per-image name + price */}
+          {category === 'objects' && project.images && project.images.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {project.images.map((img) => (
+                <div key={img.id}>
+                  <div className="aspect-square border border-black overflow-hidden mb-3">
+                    <img
+                      src={img.image_url}
+                      alt={img.alt_text || img.name || project.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  {img.name && (
+                    <p className="text-sm font-mono tracking-widest">{img.name}</p>
+                  )}
+                  {img.price && (
+                    <p className="text-sm font-mono text-gray-600 mt-1">{img.price}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Project Gallery + Audio Player Side by Side (non-objects) */}
+          {category !== 'objects' && projectImages.length > 0 && (
             <div className="flex flex-col md:flex-row md:items-start md:gap-12">
               <div className="flex-1">
                 <ImageGallery
