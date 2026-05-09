@@ -1,9 +1,10 @@
-const SHOPIFY_DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN ?? '';
+// Strip protocol and trailing slash so the env var is forgiving
+const rawDomain = import.meta.env.VITE_SHOPIFY_DOMAIN ?? '';
+const SHOPIFY_DOMAIN = rawDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 const SHOPIFY_TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN ?? '';
 
 export const shopifyConfigured = !!(SHOPIFY_DOMAIN && SHOPIFY_TOKEN);
 
-// Log so it's visible in browser console
 console.log('[Shopify] configured:', shopifyConfigured, '| domain:', SHOPIFY_DOMAIN || '(not set)');
 
 async function gql(query: string, variables?: Record<string, unknown>) {
