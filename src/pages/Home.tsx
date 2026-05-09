@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown, MessageSquare } from 'lucide-react';
+import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown, MessageSquare, ShoppingBag } from 'lucide-react';
 import { getProjectsByCategory, getThumbnailForProject, getProject, Project } from '../lib/supabase';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
@@ -31,7 +31,6 @@ const Home = () => {
     { slug: 'bio', name: 'BIO' },
   ];
 
-  // Replace with your actual Discord invite URL
   const DISCORD_URL = 'https://discord.gg/5kDsbhbF';
 
   // Load projects when category is selected
@@ -395,6 +394,13 @@ const Home = () => {
         {/* Mobile: show category list so navigation is obvious */}
         <div className="lg:hidden flex flex-col gap-3 pt-4">
           <p className="text-xs font-mono text-gray-400 tracking-widest mb-2">EXPLORE</p>
+          <Link
+            to="/shop"
+            className="text-left text-lg font-mono tracking-widest border border-black px-6 py-4 bg-black text-white flex items-center gap-3"
+          >
+            <ShoppingBag size={18} />
+            SHOP
+          </Link>
           {categories.map((category) => (
             <button
               key={category.slug}
@@ -564,6 +570,13 @@ const Home = () => {
           <footer className="border-t border-black p-8 md:px-16 md:pb-16 bg-white flex-shrink-0">
             {/* Community links */}
             <div className="mb-6 flex flex-col gap-2">
+              <Link
+                to="/shop"
+                className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300 flex items-center justify-center gap-2 bg-black text-white"
+              >
+                <ShoppingBag size={14} />
+                SHOP
+              </Link>
               <Link
                 to="/collaborate"
                 className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300"

@@ -9,6 +9,7 @@ export interface CreateProjectData {
   dimensions: string;
   app_link?: string;
   price?: string;
+  show_in_shop?: boolean;
   categoryIds: string[];
   displayOrder?: number;
 }

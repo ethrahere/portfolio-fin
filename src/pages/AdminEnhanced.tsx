@@ -49,6 +49,7 @@ const AdminEnhanced = () => {
     dimensions: '',
     app_link: '',
     price: '',
+    show_in_shop: false,
     categoryIds: [] as string[]
   });
   
@@ -181,6 +182,7 @@ const AdminEnhanced = () => {
       dimensions: '',
       app_link: '',
       price: '',
+      show_in_shop: false,
       categoryIds: []
     });
     setCurrentProjectId('');
@@ -201,6 +203,7 @@ const AdminEnhanced = () => {
       dimensions: project.dimensions,
       app_link: project.app_link || '',
       price: project.price || '',
+      show_in_shop: project.show_in_shop || false,
       categoryIds: project.categories?.map(c => c.id) || []
     });
 
@@ -461,6 +464,24 @@ const AdminEnhanced = () => {
                       <p className="text-xs text-gray-500 font-mono mt-1">
                         Set a price for physical objects available for sale. Shown on the listing and project page.
                       </p>
+                    </div>
+
+                    <div className="border border-black p-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.show_in_shop}
+                          onChange={(e) => setFormData(prev => ({ ...prev, show_in_shop: e.target.checked }))}
+                          className="w-4 h-4"
+                          disabled={saving}
+                        />
+                        <div>
+                          <span className="text-sm font-mono">SHOW IN SHOP</span>
+                          <p className="text-xs text-gray-500 font-mono mt-0.5">
+                            Makes this project visible at /shop. Add Shopify variant IDs to images below to enable buy buttons.
+                          </p>
+                        </div>
+                      </label>
                     </div>
 
                     <div>

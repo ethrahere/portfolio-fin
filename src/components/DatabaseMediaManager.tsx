@@ -26,6 +26,7 @@ interface DatabaseMediaFile {
   alt_text?: string;
   name?: string;
   price?: string;
+  shopify_variant_id?: string;
   title?: string;
   display_order: number;
   is_thumbnail?: boolean;
@@ -72,6 +73,7 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
         alt_text: file.alt_text,
         name: file.name,
         price: file.price,
+        shopify_variant_id: file.shopify_variant_id,
         title: file.title,
         display_order: file.display_order || 0,
         is_thumbnail: file.is_thumbnail || false
@@ -210,10 +212,11 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
   const handleMetadataUpdate = async (fileId: string, updates: Partial<DatabaseMediaFile>) => {
     try {
       if (type === 'image') {
-        const updateData: { alt_text?: string; name?: string; price?: string; is_thumbnail?: boolean } = {};
+        const updateData: { alt_text?: string; name?: string; price?: string; shopify_variant_id?: string; is_thumbnail?: boolean } = {};
         if (updates.alt_text !== undefined) updateData.alt_text = updates.alt_text;
         if (updates.name !== undefined) updateData.name = updates.name;
         if (updates.price !== undefined) updateData.price = updates.price;
+        if (updates.shopify_variant_id !== undefined) updateData.shopify_variant_id = updates.shopify_variant_id;
         if (updates.is_thumbnail !== undefined) {
           updateData.is_thumbnail = updates.is_thumbnail;
           
@@ -433,6 +436,13 @@ const DatabaseMediaManager: React.FC<DatabaseMediaManagerProps> = ({
                           placeholder="Price (e.g. £45)"
                           value={file.price || ''}
                           onChange={(e) => handleMetadataUpdate(file.id, { price: e.target.value })}
+                          className="text-xs font-mono border border-gray-300 px-2 py-1"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Shopify variant ID (gid://shopify/ProductVariant/...)"
+                          value={file.shopify_variant_id || ''}
+                          onChange={(e) => handleMetadataUpdate(file.id, { shopify_variant_id: e.target.value })}
                           className="text-xs font-mono border border-gray-300 px-2 py-1"
                         />
                         <input

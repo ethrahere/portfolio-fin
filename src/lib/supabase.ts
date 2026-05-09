@@ -28,8 +28,9 @@ export interface Project {
   dimensions: string;
   thumbnail_url?: string;
   category_id?: string; // Keep for backward compatibility
-  app_link?: string; // URL link for app projects
-  price?: string; // Price for sale (objects category)
+  app_link?: string;
+  price?: string;
+  show_in_shop?: boolean;
   display_order: number;
   created_at: string;
   updated_at: string;
@@ -46,6 +47,7 @@ export interface ProjectImage {
   alt_text: string;
   name?: string;
   price?: string;
+  shopify_variant_id?: string;
   display_order: number;
   is_thumbnail: boolean;
   created_at: string;
@@ -350,6 +352,52 @@ export const deleteCollaborationRequest = async (requestId: string): Promise<voi
     .delete()
     .eq('id', requestId);
   if (error) throw error;
+};
+
+// ─── Shop Queries ─────────────────────────────────────────────────────────────
+
+export const getShopProjects = async (): Promise<Project[]> => {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      *,
+      categories:project_categories(category:categories(*)),
+      images:project_images(*)
+    `)
+    .eq('show_in_shop', true)
+    .order('display_order');
+
+  if (error) throw error;
+
+  return (data || []).map((p: Project & { categories?: { category: Category }[] }) => ({
+    ...p,
+    categories: p.categories?.map((pc: { category: Category }) => pc.category) || [],
+    images: (p.images || []).sort((a: ProjectImage, b: ProjectImage) => a.display_order - b.display_order),
+  }));
+};
+
+export const getShopProject = async (slug: string): Promise<Project | null> => {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      *,
+      categories:project_categories(category:categories(*)),
+      images:project_images(*)
+    `)
+    .eq('slug', slug)
+    .eq('show_in_shop', true)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+
+  return {
+    ...data,
+    categories: data.categories?.map((pc: { category: Category }) => pc.category) || [],
+    images: (data.images || []).sort((a: ProjectImage, b: ProjectImage) => a.display_order - b.display_order),
+  };
 };
 
 // Get latest project thumbnail for each category
