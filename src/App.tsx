@@ -50,6 +50,7 @@ function App() {
               <Route path="/shop" element={<Shop />} />
               <Route path="/shop/:slug" element={<ShopProject />} />
               <Route path="/collaborate" element={<Collaborate />} />
+
               <Route path="/admin" element={<AdminEnhanced />} />
               <Route path="/reset-password" element={<ResetPassword />} />
             </Routes>

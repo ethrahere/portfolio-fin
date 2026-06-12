@@ -11,6 +11,7 @@ const ShopProject: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const { itemCount, openCart, addItem } = useCart();
 
@@ -28,14 +29,26 @@ const ShopProject: React.FC = () => {
     addItem({
       variantId: img.shopify_variant_id,
       name: img.name || project?.title || 'Item',
-      price: img.price || '',
+      price: img.price || project?.price || '',
       imageUrl: img.image_url,
     });
 
     setAddedIds(prev => new Set(prev).add(img.id));
     setTimeout(() => {
-      setAddedIds(prev => { const s = new Set(prev); s.delete(img.id); return s; });
+      setAddedIds(prev => {
+        const s = new Set(prev);
+        s.delete(img.id);
+        return s;
+      });
     }, 2000);
+  };
+
+  const handleEmailPurchase = (img: NonNullable<Project['images']>[number]) => {
+    const subject = encodeURIComponent(`Purchase Enquiry — ${img.name || project?.title}`);
+    const body = encodeURIComponent(
+      `Hi,\n\nI'm interested in purchasing:\n\n${img.name || project?.title}\n${img.price || project?.price || ''}\n\nPlease let me know how to proceed.\n\nThank you.`
+    );
+    window.location.href = `mailto:ethra.here@gmail.com?subject=${subject}&body=${body}`;
   };
 
   if (loading) {
@@ -49,43 +62,47 @@ const ShopProject: React.FC = () => {
   if (!project) {
     return (
       <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8">
-          <ArrowLeft size={16} /> SHOP
+        <Link
+          to="/shop"
+          className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8"
+        >
+          <ArrowLeft size={16} /> DROPS
         </Link>
-        <div className="text-sm font-mono">ITEM NOT FOUND</div>
+        <div className="text-sm font-mono text-gray-400">DROP NOT FOUND</div>
       </div>
     );
   }
 
-  const purchasableImages = project.images?.filter(img => img.name || img.price || img.shopify_variant_id) || [];
+  const purchasableImages =
+    project.images?.filter(img => img.name || img.price || img.shopify_variant_id) || [];
+
+  const galleryImages = project.images || [];
+  const displayImage = galleryImages[selectedImage] ?? galleryImages[0];
 
   return (
     <>
       <Helmet>
-        <title>{project.title} | ETHRA Shop</title>
+        <title>{project.title} | ETHRA Drops</title>
         <meta name="description" content={project.description?.substring(0, 160)} />
       </Helmet>
 
       <CartDrawer />
 
       <div className="min-h-screen text-black bg-white/50 p-8 md:p-16">
-        <div className="max-w-6xl mx-auto">
-          <header className="flex items-start justify-between mb-16">
-            <div>
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8"
-              >
-                <ArrowLeft size={16} />
-                SHOP
-              </Link>
-              <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-4">
-                {project.title}
-              </h1>
-            </div>
+        <div className="max-w-5xl mx-auto">
+
+          {/* Nav bar */}
+          <div className="flex items-center justify-between mb-16">
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline"
+            >
+              <ArrowLeft size={16} />
+              DROPS
+            </Link>
             <button
               onClick={openCart}
-              className="relative flex items-center gap-2 border border-black px-4 py-2 font-mono text-sm hover:bg-black hover:text-white transition-colors mt-8 flex-shrink-0"
+              className="relative flex items-center gap-2 border border-black px-4 py-2 font-mono text-sm hover:bg-black hover:text-white transition-colors flex-shrink-0"
             >
               <ShoppingBag size={16} />
               CART
@@ -95,60 +112,169 @@ const ShopProject: React.FC = () => {
                 </span>
               )}
             </button>
-          </header>
+          </div>
 
-          {/* Project description */}
-          {project.description && (
-            <div className="max-w-2xl mb-16">
-              <MarkdownRenderer content={project.description} />
-            </div>
-          )}
+          {/* Drop label */}
+          <p className="text-xs font-mono tracking-widest text-gray-400 mb-6">
+            ONE OF ONE — {project.year}
+          </p>
 
-          {/* Product grid */}
-          {purchasableImages.length === 0 ? (
-            <div className="text-sm font-mono text-gray-500">NO ITEMS AVAILABLE YET</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-              {purchasableImages.map(img => {
-                const canBuy = !!(img.shopify_variant_id);
-                const justAdded = addedIds.has(img.id);
+          {/* Title */}
+          <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-16">
+            {project.title}
+          </h1>
 
-                return (
-                  <div key={img.id} className="flex flex-col">
-                    <div className="aspect-square border border-black overflow-hidden mb-4">
+          {/* Main layout: gallery + story side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20">
+
+            {/* Gallery column */}
+            <div>
+              {displayImage && (
+                <div className="aspect-square border border-black overflow-hidden mb-4">
+                  <img
+                    src={displayImage.image_url}
+                    alt={displayImage.alt_text || displayImage.name || project.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Thumbnail strip */}
+              {galleryImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {galleryImages.map((img, idx) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`flex-shrink-0 w-16 h-16 border overflow-hidden transition-colors ${
+                        idx === selectedImage ? 'border-black' : 'border-gray-300 hover:border-black'
+                      }`}
+                    >
                       <img
                         src={img.image_url}
-                        alt={img.alt_text || img.name || project.title}
+                        alt={img.alt_text || img.name || `Image ${idx + 1}`}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Story + purchase column */}
+            <div className="flex flex-col">
+              {/* Project-level price */}
+              {project.price && (
+                <p className="text-2xl font-mono tracking-wide mb-10">{project.price}</p>
+              )}
+
+              {/* Story */}
+              {project.description && (
+                <div className="text-sm font-mono leading-relaxed mb-12 flex-1">
+                  <p className="text-xs tracking-widest text-gray-400 mb-4">THE STORY</p>
+                  <MarkdownRenderer content={project.description} />
+                </div>
+              )}
+
+              {/* Medium / dimensions if set */}
+              {(project.medium || project.dimensions) && (
+                <dl className="text-sm font-mono space-y-2 mb-10 border-t border-black pt-6">
+                  {project.medium && (
+                    <div className="flex gap-6">
+                      <dt className="text-gray-400 w-28 flex-shrink-0">MEDIUM</dt>
+                      <dd>{project.medium}</dd>
                     </div>
+                  )}
+                  {project.dimensions && (
+                    <div className="flex gap-6">
+                      <dt className="text-gray-400 w-28 flex-shrink-0">DIMENSIONS</dt>
+                      <dd>{project.dimensions}</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+            </div>
+          </div>
 
-                    {img.name && (
-                      <h2 className="text-sm font-mono tracking-widest mb-1">{img.name}</h2>
-                    )}
-                    {img.price && (
-                      <p className="text-sm font-mono text-gray-600 mb-4">{img.price}</p>
-                    )}
+          {/* Purchasable items */}
+          {purchasableImages.length > 0 && (
+            <section>
+              <p className="text-xs font-mono tracking-widest text-gray-400 mb-8 border-t border-black pt-8">
+                {purchasableImages.length === 1 ? 'THE PIECE' : 'THE PIECES'}
+              </p>
 
-                    {canBuy && (
-                      <button
-                        onClick={() => handleAddToCart(img)}
-                        className={`mt-auto flex items-center justify-center gap-2 text-xs font-mono tracking-widest py-3 border transition-colors duration-300 ${
-                          justAdded
-                            ? 'bg-black text-white border-black'
-                            : 'border-black hover:bg-black hover:text-white'
-                        }`}
-                      >
-                        <ShoppingCart size={14} />
-                        {justAdded ? 'ADDED ✓' : 'ADD TO CART'}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+                {purchasableImages.map(img => {
+                  const canBuy = !!(img.shopify_variant_id);
+                  const justAdded = addedIds.has(img.id);
+                  const itemPrice = img.price || project.price;
+
+                  return (
+                    <div key={img.id} className="flex flex-col">
+                      <div className="aspect-square border border-black overflow-hidden mb-4">
+                        <img
+                          src={img.image_url}
+                          alt={img.alt_text || img.name || project.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+
+                      {img.name && (
+                        <h2 className="text-sm font-mono tracking-widest mb-1">{img.name}</h2>
+                      )}
+                      {itemPrice && (
+                        <p className="text-sm font-mono text-gray-600 mb-4">{itemPrice}</p>
+                      )}
+
+                      {canBuy ? (
+                        <button
+                          onClick={() => handleAddToCart(img)}
+                          className={`mt-auto flex items-center justify-center gap-2 text-xs font-mono tracking-widest py-3 border transition-colors duration-300 ${
+                            justAdded
+                              ? 'bg-black text-white border-black'
+                              : 'border-black hover:bg-black hover:text-white'
+                          }`}
+                        >
+                          <ShoppingCart size={14} />
+                          {justAdded ? 'ADDED ✓' : 'ADD TO CART'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleEmailPurchase(img)}
+                          className="mt-auto flex items-center justify-center gap-2 text-xs font-mono tracking-widest py-3 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                        >
+                          SHOP NOW →
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* If no purchasable images but project has price — single piece CTA */}
+          {purchasableImages.length === 0 && project.price && (
+            <div className="border-t border-black pt-8">
+              <p className="text-2xl font-mono tracking-wide mb-6">{project.price}</p>
+              <button
+                onClick={() => {
+                  const subject = encodeURIComponent(`Purchase Enquiry — ${project.title}`);
+                  const body = encodeURIComponent(
+                    `Hi,\n\nI'm interested in purchasing: ${project.title} (${project.price})\n\nPlease let me know how to proceed.\n\nThank you.`
+                  );
+                  window.location.href = `mailto:ethra.here@gmail.com?subject=${subject}&body=${body}`;
+                }}
+                className="inline-flex items-center gap-3 border border-black px-8 py-4 text-sm font-mono tracking-widest hover:bg-black hover:text-white transition-colors duration-300"
+              >
+                <ShoppingBag size={16} />
+                SHOP NOW
+              </button>
             </div>
           )}
+
         </div>
       </div>
     </>

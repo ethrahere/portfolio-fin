@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown, MessageSquare, ShoppingBag } from 'lucide-react';
-import { getProjectsByCategory, getThumbnailForProject, getProject, Project } from '../lib/supabase';
+import { Instagram, Twitter, Mail, ArrowLeft, ExternalLink, ChevronDown, MessageSquare, ShoppingBag, ShoppingCart, X } from 'lucide-react';
+import { getProjectsByCategory, getThumbnailForProject, getProject, getShopProjects, Project, ProjectImage } from '../lib/supabase';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import VineCursorCanvas from '../components/VineCursorCanvas';
+import CartDrawer from '../components/CartDrawer';
+import { useCart } from '../contexts/CartContext';
+
+interface ShopItem {
+  image: ProjectImage;
+  project: Project;
+}
 
 type ViewState =
   | { type: 'home' }
+  | { type: 'shop' }
   | { type: 'category'; slug: string; name: string }
   | { type: 'project'; categorySlug: string; projectSlug: string };
 
@@ -20,6 +28,13 @@ const Home = () => {
   const [selectedTrack, setSelectedTrack] = useState(0);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showContactDropdown, setShowContactDropdown] = useState(false);
+
+  // Shop state
+  const [shopItems, setShopItems] = useState<ShopItem[]>([]);
+  const [shopLoading, setShopLoading] = useState(false);
+  const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null);
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const { itemCount, openCart, addItem } = useCart();
 
   const categories = [
     { slug: '3d', name: '3D' },
@@ -33,43 +48,44 @@ const Home = () => {
 
   const DISCORD_URL = 'https://discord.gg/5kDsbhbF';
 
+  // Load shop items when shop view is active
+  useEffect(() => {
+    if (viewState.type !== 'shop') return;
+    setShopLoading(true);
+    getShopProjects()
+      .then(fetched => {
+        const flat: ShopItem[] = [];
+        for (const project of fetched) {
+          for (const image of project.images || []) {
+            if (image.name || image.price || image.shopify_variant_id) {
+              flat.push({ image, project });
+            }
+          }
+        }
+        setShopItems(flat);
+      })
+      .catch(console.error)
+      .finally(() => setShopLoading(false));
+  }, [viewState]);
+
   // Load projects when category is selected
   useEffect(() => {
-    const loadProjects = async () => {
-      if (viewState.type === 'category') {
-        setLoading(true);
-        try {
-          const data = await getProjectsByCategory(viewState.slug);
-          setProjects(data);
-        } catch (error) {
-          console.error('Error fetching projects:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadProjects();
+    if (viewState.type !== 'category') return;
+    setLoading(true);
+    getProjectsByCategory(viewState.slug)
+      .then(setProjects)
+      .catch(err => console.error('Error fetching projects:', err))
+      .finally(() => setLoading(false));
   }, [viewState]);
 
   // Load project details when project is selected
   useEffect(() => {
-    const loadProject = async () => {
-      if (viewState.type === 'project') {
-        setLoading(true);
-        try {
-          const data = await getProject(viewState.categorySlug, viewState.projectSlug);
-          setCurrentProject(data);
-          setSelectedTrack(0);
-        } catch (error) {
-          console.error('Error fetching project:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadProject();
+    if (viewState.type !== 'project') return;
+    setLoading(true);
+    getProject(viewState.categorySlug, viewState.projectSlug)
+      .then(data => { setCurrentProject(data); setSelectedTrack(0); })
+      .catch(err => console.error('Error fetching project:', err))
+      .finally(() => setLoading(false));
   }, [viewState]);
 
   const handleCategoryClick = (slug: string, name: string) => {
@@ -82,20 +98,153 @@ const Home = () => {
 
   const handleBackClick = () => {
     if (viewState.type === 'project') {
-      // Go back to category listing
-      const categorySlug = viewState.categorySlug;
-      const category = categories.find(c => c.slug === categorySlug);
-      if (category) {
-        setViewState({ type: 'category', slug: category.slug, name: category.name });
-      }
-    } else if (viewState.type === 'category') {
-      // Go back to home
+      const category = categories.find(c => c.slug === viewState.categorySlug);
+      if (category) setViewState({ type: 'category', slug: category.slug, name: category.name });
+    } else {
       setViewState({ type: 'home' });
     }
   };
 
+  const handleAddToCart = useCallback((item: ShopItem) => {
+    if (!item.image.shopify_variant_id) return;
+    addItem({
+      variantId: item.image.shopify_variant_id,
+      name: item.image.name || item.project.title,
+      price: item.image.price || item.project.price || '',
+      imageUrl: item.image.image_url,
+    });
+    setAddedId(item.image.id);
+    setTimeout(() => setAddedId(null), 2000);
+  }, [addItem]);
+
+  const handleEmailPurchase = useCallback((item: ShopItem) => {
+    const name = item.image.name || item.project.title;
+    const price = item.image.price || item.project.price || '';
+    const subject = encodeURIComponent(`Purchase Enquiry — ${name}`);
+    const body = encodeURIComponent(
+      `Hi,\n\nI'm interested in purchasing:\n\n${name}\n${price}\n\nPlease let me know how to proceed.\n\nThank you.`
+    );
+    window.location.href = `mailto:ethra.here@gmail.com?subject=${subject}&body=${body}`;
+  }, []);
+
   // Render right panel content
   const renderRightPanel = () => {
+    // Shop view
+    if (viewState.type === 'shop') {
+      return (
+        <div className="h-full flex flex-col overflow-y-auto scrollbar-hide">
+          {/* Item modal */}
+          {selectedShopItem && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+              onClick={() => setSelectedShopItem(null)}
+            >
+              <div
+                className="bg-white max-w-md w-full mx-4 p-8 relative font-mono"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setSelectedShopItem(null)}
+                  className="absolute top-4 right-4 hover:opacity-60 transition-opacity"
+                >
+                  <X size={18} />
+                </button>
+
+                <div className="aspect-square border border-black overflow-hidden mb-6">
+                  <img
+                    src={selectedShopItem.image.image_url}
+                    alt={selectedShopItem.image.alt_text || selectedShopItem.image.name || selectedShopItem.project.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {selectedShopItem.image.name && (
+                  <h2 className="text-sm tracking-widest mb-3">{selectedShopItem.image.name}</h2>
+                )}
+                {selectedShopItem.image.alt_text && (
+                  <p className="text-xs text-gray-600 leading-relaxed mb-4">{selectedShopItem.image.alt_text}</p>
+                )}
+                {(selectedShopItem.image.price || selectedShopItem.project.price) && (
+                  <p className="text-base tracking-wide mb-6">
+                    {selectedShopItem.image.price || selectedShopItem.project.price}
+                  </p>
+                )}
+
+                {selectedShopItem.image.shopify_variant_id ? (
+                  <button
+                    onClick={() => handleAddToCart(selectedShopItem)}
+                    className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
+                      addedId === selectedShopItem.image.id
+                        ? 'bg-black text-white border-black'
+                        : 'border-black hover:bg-black hover:text-white'
+                    }`}
+                  >
+                    <ShoppingCart size={14} />
+                    {addedId === selectedShopItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEmailPurchase(selectedShopItem)}
+                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                  >
+                    <ShoppingBag size={14} />
+                    ENQUIRE
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-3xl md:text-4xl font-mono tracking-wide">SHOP</h2>
+            <button
+              onClick={openCart}
+              className="group hidden lg:flex items-center gap-2 border border-black px-4 py-2 font-mono text-xs tracking-widest hover:bg-black hover:text-white transition-colors"
+            >
+              <ShoppingBag size={14} />
+              CART
+              {itemCount > 0 && (
+                <span className="bg-black text-white text-xs font-mono w-5 h-5 rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {shopLoading ? (
+            <div className="text-sm font-mono">LOADING...</div>
+          ) : shopItems.length === 0 ? (
+            <div className="text-sm font-mono text-gray-400">COMING SOON.</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {shopItems.map(({ image, project }) => (
+                <button
+                  key={image.id}
+                  onClick={() => setSelectedShopItem({ image, project })}
+                  className="group text-left"
+                >
+                  <div className="aspect-square bg-gray-100 border border-black overflow-hidden mb-3">
+                    <img
+                      src={image.image_url}
+                      alt={image.alt_text || image.name || project.title}
+                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                  {image.name && (
+                    <p className="text-xs font-mono tracking-widest mb-1">{image.name}</p>
+                  )}
+                  {(image.price || project.price) && (
+                    <p className="text-xs font-mono text-gray-500">{image.price || project.price}</p>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (loading) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -393,14 +542,17 @@ const Home = () => {
       <div className="w-full h-full">
         {/* Mobile: show category list so navigation is obvious */}
         <div className="lg:hidden flex flex-col gap-3 pt-4">
-          <p className="text-xs font-mono text-gray-400 tracking-widest mb-2">EXPLORE</p>
-          <Link
-            to="/shop"
+          <p className="text-xs font-mono text-gray-400 tracking-widest mb-2">
+            I DROP ONE-OF-ONE PIECES EVERY FRIDAY AND BUILD WEBSITES THAT SELL.
+          </p>
+          <button
+            onClick={() => setViewState({ type: 'shop' })}
             className="text-left text-lg font-mono tracking-widest border border-black px-6 py-4 bg-black text-white flex items-center gap-3"
           >
             <ShoppingBag size={18} />
             SHOP
-          </Link>
+          </button>
+
           {categories.map((category) => (
             <button
               key={category.slug}
@@ -419,10 +571,10 @@ const Home = () => {
     );
   };
 
-  const getCurrentCategoryName = () => {
-    if (viewState.type === 'category') {
-      return viewState.name;
-    } else if (viewState.type === 'project') {
+  const getCurrentViewName = () => {
+    if (viewState.type === 'shop') return 'SHOP';
+    if (viewState.type === 'category') return viewState.name;
+    if (viewState.type === 'project') {
       const category = categories.find(c => c.slug === viewState.categorySlug);
       return category?.name || '3D';
     }
@@ -431,14 +583,16 @@ const Home = () => {
 
   return (
     <div className="h-screen text-black bg-white/50 flex flex-col overflow-hidden">
-      {/* Mobile Breadcrumb Navigation */}
+      <CartDrawer />
+
+      {/* Mobile Top Navigation */}
       <nav className="lg:hidden border-b border-black bg-white flex-shrink-0">
         <div className="flex items-center justify-between p-4">
           {/* ETHRA Title */}
           <h1 className="text-xl font-mono tracking-wide">ETHRA</h1>
 
           <div className="flex items-center gap-3">
-            {/* Category Dropdown */}
+            {/* Category / Shop Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -447,12 +601,23 @@ const Home = () => {
                 }}
                 className="flex items-center gap-2 text-sm font-mono border border-black px-3 py-2 hover:bg-black hover:text-white transition-colors"
               >
-                {getCurrentCategoryName()}
+                {getCurrentViewName()}
                 <ChevronDown size={14} />
               </button>
 
               {showCategoryDropdown && (
                 <div className="absolute right-0 top-full mt-1 bg-white border border-black shadow-lg z-50 min-w-[120px]">
+                  <button
+                    onClick={() => {
+                      setViewState({ type: 'shop' });
+                      setShowCategoryDropdown(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-sm font-mono hover:bg-black hover:text-white transition-colors ${
+                      viewState.type === 'shop' ? 'bg-gray-100' : ''
+                    }`}
+                  >
+                    SHOP
+                  </button>
                   {categories.map((category) => (
                     <button
                       key={category.slug}
@@ -472,6 +637,19 @@ const Home = () => {
                 </div>
               )}
             </div>
+
+            {/* Cart button */}
+            <button
+              onClick={openCart}
+              className="group flex items-center gap-1 text-sm font-mono border border-black px-3 py-2 hover:bg-black hover:text-white transition-colors"
+            >
+              <ShoppingBag size={14} />
+              {itemCount > 0 && (
+                <span className="bg-black text-white text-xs font-mono w-4 h-4 rounded-full flex items-center justify-center leading-none group-hover:bg-white group-hover:text-black transition-colors">
+                  {itemCount}
+                </span>
+              )}
+            </button>
 
             {/* Contact Dropdown */}
             <div className="relative">
@@ -548,8 +726,33 @@ const Home = () => {
               </h1>
             </header>
 
-            {/* Category Navigation */}
+            {/* Intro tagline */}
+            <div className="mb-10">
+              <p className="text-sm font-mono text-gray-600 leading-relaxed">
+                I DROP ONE-OF-ONE DIGITAL PIECES EVERY FRIDAY — AND BUILD WEBSITES THAT TURN ATTENTION INTO SALES FOR ARTISTS AND ENTREPRENEURS.
+              </p>
+            </div>
+
+            {/* Navigation */}
             <nav className="flex flex-col gap-4">
+              {/* Shop - special nav item */}
+              <button
+                onClick={() => setViewState({ type: 'shop' })}
+                className={`text-left text-xl font-mono tracking-widest border border-black px-6 py-4 transition-colors duration-300 flex items-center gap-3 ${
+                  viewState.type === 'shop'
+                    ? 'bg-black text-white'
+                    : 'hover:bg-black hover:text-white'
+                }`}
+              >
+                <ShoppingBag size={18} />
+                SHOP
+                {itemCount > 0 && (
+                  <span className="ml-auto bg-white text-black text-xs font-mono w-5 h-5 rounded-full flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
+
               {categories.map((category) => (
                 <button
                   key={category.slug}
@@ -568,15 +771,7 @@ const Home = () => {
 
           {/* Fixed Footer - Contact + Community Section */}
           <footer className="border-t border-black p-8 md:px-16 md:pb-16 bg-white flex-shrink-0">
-            {/* Community links */}
             <div className="mb-6 flex flex-col gap-2">
-              <Link
-                to="/shop"
-                className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300 flex items-center justify-center gap-2 bg-black text-white"
-              >
-                <ShoppingBag size={14} />
-                SHOP
-              </Link>
               <Link
                 to="/collaborate"
                 className="text-sm font-mono tracking-widest border border-black px-4 py-2 text-center hover:bg-black hover:text-white transition-colors duration-300"
