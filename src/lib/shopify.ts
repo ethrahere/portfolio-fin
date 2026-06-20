@@ -8,7 +8,7 @@ export const shopifyConfigured = !!(SHOPIFY_DOMAIN && SHOPIFY_TOKEN);
 console.log('[Shopify] configured:', shopifyConfigured, '| domain:', SHOPIFY_DOMAIN || '(not set)');
 
 async function gql(query: string, variables?: Record<string, unknown>) {
-  const res = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-01/graphql.json`, {
+  const res = await fetch(`https://${SHOPIFY_DOMAIN}/api/2025-01/graphql.json`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
