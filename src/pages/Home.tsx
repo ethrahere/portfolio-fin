@@ -960,11 +960,8 @@ const Home = () => {
               <span className="text-sm md:text-base font-mono">CONTACT</span>
             </div>
             <div className="flex items-center gap-6">
-              <a href="https://instagram.com/ethra.here" target="_blank" rel="noopener noreferrer" className="hover:bg-black hover:text-white transition-colors duration-300 p-1" aria-label="Instagram">
+              <a href="https://instagram.com/ethra.world" target="_blank" rel="noopener noreferrer" className="hover:bg-black hover:text-white transition-colors duration-300 p-1" aria-label="Instagram">
                 <Instagram size={20} />
-              </a>
-              <a href="https://x.com/ethra_here" target="_blank" rel="noopener noreferrer" className="hover:bg-black hover:text-white transition-colors duration-300 p-1" aria-label="Twitter">
-                <Twitter size={20} />
               </a>
               <a href="mailto:ethra.here@gmail.com" className="hover:bg-black hover:text-white transition-colors duration-300 p-1" aria-label="Email">
                 <Mail size={20} />
