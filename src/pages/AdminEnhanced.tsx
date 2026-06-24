@@ -50,6 +50,7 @@ const AdminEnhanced = () => {
     app_link: '',
     price: '',
     show_in_shop: false,
+    shop_type: 'one-of-one' as 'one-of-one' | 'charm-set' | 'wares',
     categoryIds: [] as string[]
   });
   
@@ -140,15 +141,16 @@ const AdminEnhanced = () => {
     try {
       let result;
       
+      const { shop_type: _shopType, ...dbFormData } = formData;
       if (editingProject) {
         // Update existing project
         result = await updateProjectAdmin({
           id: editingProject.id,
-          ...formData
+          ...dbFormData
         });
       } else {
         // Create new project
-        result = await createProjectAdmin(formData);
+        result = await createProjectAdmin(dbFormData);
       }
 
       if (!result.success) {
@@ -183,6 +185,7 @@ const AdminEnhanced = () => {
       app_link: '',
       price: '',
       show_in_shop: false,
+      shop_type: 'one-of-one',
       categoryIds: []
     });
     setCurrentProjectId('');
@@ -194,6 +197,9 @@ const AdminEnhanced = () => {
   const startEdit = (project: Project) => {
     setEditingProject(project);
     setCurrentProjectId(project.id);
+    const shop_type = project.slug === 'charm-set' ? 'charm-set'
+      : project.slug === 'wares' ? 'wares'
+      : 'one-of-one';
     setFormData({
       title: project.title,
       slug: project.slug,
@@ -204,6 +210,7 @@ const AdminEnhanced = () => {
       app_link: project.app_link || '',
       price: project.price || '',
       show_in_shop: project.show_in_shop || false,
+      shop_type,
       categoryIds: project.categories?.map(c => c.id) || []
     });
 
@@ -482,6 +489,40 @@ const AdminEnhanced = () => {
                           </p>
                         </div>
                       </label>
+
+                      {formData.show_in_shop && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-xs font-mono text-gray-500 mb-3">PRODUCT TYPE</p>
+                          <div className="flex flex-col gap-2">
+                            {([
+                              { value: 'one-of-one', label: 'ONE-OF-ONE', hint: 'Unique art drop — shown as a featured/past drop' },
+                              { value: 'charm-set', label: 'CHARM SET', hint: 'Individual charms — sets slug to "charm-set"' },
+                              { value: 'wares', label: 'WARES', hint: 'Necklaces & misc handmade goods — sets slug to "wares"' },
+                            ] as const).map(({ value, label, hint }) => (
+                              <label key={value} className="flex items-start gap-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="shop_type"
+                                  value={value}
+                                  checked={formData.shop_type === value}
+                                  onChange={() => {
+                                    const slugOverride = value === 'charm-set' ? 'charm-set'
+                                      : value === 'wares' ? 'wares'
+                                      : formData.slug;
+                                    setFormData(prev => ({ ...prev, shop_type: value, slug: slugOverride }));
+                                  }}
+                                  className="mt-0.5"
+                                  disabled={saving}
+                                />
+                                <div>
+                                  <span className="text-sm font-mono">{label}</span>
+                                  <p className="text-xs text-gray-400 font-mono">{hint}</p>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>

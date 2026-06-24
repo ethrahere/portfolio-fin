@@ -20,7 +20,7 @@ type ViewState =
   | { type: 'category'; slug: string; name: string }
   | { type: 'project'; categorySlug: string; projectSlug: string };
 
-type ShopSection = 'drops' | 'charm-set';
+type ShopSection = 'all' | 'drops' | 'charm-set' | 'wares';
 
 const Home = () => {
   const [viewState, setViewState] = useState<ViewState>(() =>
@@ -39,6 +39,7 @@ const Home = () => {
   const [shopSection, setShopSection] = useState<ShopSection>('drops');
   const [selectedDrop, setSelectedDrop] = useState<Project | null>(null);
   const [selectedCharmItem, setSelectedCharmItem] = useState<ShopItem | null>(null);
+  const [selectedWaresItem, setSelectedWaresItem] = useState<ShopItem | null>(null);
   const [addedId, setAddedId] = useState<string | null>(null);
   const { itemCount, openCart, addItem } = useCart();
 
@@ -150,14 +151,18 @@ const Home = () => {
   const renderRightPanel = () => {
     // ── Shop view ──────────────────────────────────────────────────────────────
     if (viewState.type === 'shop') {
-      // Split projects into art drops vs charm set
-      const artDrops = shopProjects.filter(p => p.slug !== 'charm-set');
+      // Split projects into sections
       const charmProject = shopProjects.find(p => p.slug === 'charm-set') || null;
+      const waresProject = shopProjects.find(p => p.slug === 'wares') || null;
+      const artDrops = shopProjects.filter(p => p.slug !== 'charm-set' && p.slug !== 'wares');
       const currentDrop = artDrops[0] || null;
       const pastDrops = artDrops.slice(1);
       const charmItems: ShopItem[] = (charmProject?.images || [])
         .filter(img => img.name || img.price || img.shopify_variant_id)
         .map(img => ({ image: img, project: charmProject! }));
+      const waresItems: ShopItem[] = (waresProject?.images || [])
+        .filter(img => img.name || img.price || img.shopify_variant_id)
+        .map(img => ({ image: img, project: waresProject! }));
 
       return (
         <div className="h-full flex flex-col overflow-y-auto scrollbar-hide">
@@ -220,6 +225,74 @@ const Home = () => {
                     ENQUIRE
                   </button>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Wares item modal */}
+          {selectedWaresItem && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+              onClick={() => setSelectedWaresItem(null)}
+            >
+              <div
+                className="bg-white max-w-md w-full mx-4 font-mono"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex justify-end px-4 pt-4 pb-2">
+                  <button
+                    onClick={() => setSelectedWaresItem(null)}
+                    className="hover:opacity-60 transition-opacity"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="px-8 pb-8">
+                <div className="aspect-square border border-black overflow-hidden mb-6">
+                  <img
+                    src={selectedWaresItem.image.image_url}
+                    alt={selectedWaresItem.image.alt_text || selectedWaresItem.image.name || ''}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {selectedWaresItem.image.name && (
+                  <h2 className="text-sm tracking-widest mb-3">{selectedWaresItem.image.name}</h2>
+                )}
+                {selectedWaresItem.project.description && (
+                  <div className="text-xs text-gray-600 leading-relaxed mb-4">
+                    <MarkdownRenderer content={selectedWaresItem.project.description} />
+                  </div>
+                )}
+                {(selectedWaresItem.image.price || selectedWaresItem.project.price) && (
+                  <p className="text-base tracking-wide mb-6">
+                    {selectedWaresItem.image.price || selectedWaresItem.project.price}
+                  </p>
+                )}
+
+                {selectedWaresItem.image.shopify_variant_id ? (
+                  <button
+                    onClick={() => handleAddCharmToCart(selectedWaresItem)}
+                    className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
+                      addedId === selectedWaresItem.image.id
+                        ? 'bg-black text-white border-black'
+                        : 'border-black hover:bg-black hover:text-white'
+                    }`}
+                  >
+                    <ShoppingCart size={14} />
+                    {addedId === selectedWaresItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEmailCharm(selectedWaresItem)}
+                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                  >
+                    <ShoppingBag size={14} />
+                    ENQUIRE
+                  </button>
+                )}
+                </div>
               </div>
             </div>
           )}
@@ -306,8 +379,16 @@ const Home = () => {
           {/* Category tabs */}
           <div className="flex border border-black mb-10 flex-shrink-0">
             <button
-              onClick={() => setShopSection('drops')}
+              onClick={() => setShopSection('all')}
               className={`flex-1 text-xs font-mono tracking-widest py-3 transition-colors duration-200 ${
+                shopSection === 'all' ? 'bg-black text-white' : 'hover:bg-gray-100'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              onClick={() => setShopSection('drops')}
+              className={`flex-1 text-xs font-mono tracking-widest py-3 border-l border-black transition-colors duration-200 ${
                 shopSection === 'drops' ? 'bg-black text-white' : 'hover:bg-gray-100'
               }`}
             >
@@ -321,10 +402,113 @@ const Home = () => {
             >
               CHARM SET
             </button>
+            <button
+              onClick={() => setShopSection('wares')}
+              className={`flex-1 text-xs font-mono tracking-widest py-3 border-l border-black transition-colors duration-200 ${
+                shopSection === 'wares' ? 'bg-black text-white' : 'hover:bg-gray-100'
+              }`}
+            >
+              WARES
+            </button>
           </div>
 
           {shopLoading ? (
             <div className="text-sm font-mono">LOADING...</div>
+          ) : shopSection === 'all' ? (
+            // ── ALL items ─────────────────────────────────────────────────────
+            <div className="flex flex-col gap-10">
+              {artDrops.length === 0 && charmItems.length === 0 && waresItems.length === 0 ? (
+                <p className="text-sm font-mono text-gray-400">COMING SOON.</p>
+              ) : (
+                <>
+                  {artDrops.length > 0 && (
+                    <div>
+                      <p className="text-xs font-mono tracking-widest text-gray-400 mb-6">ONE-OF-ONE</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {artDrops.map(drop => (
+                          <button
+                            key={drop.id}
+                            onClick={() => setSelectedDrop(drop)}
+                            className="group text-left"
+                          >
+                            <div className="aspect-square border border-black overflow-hidden mb-3">
+                              <img
+                                src={getThumbnailForProject(drop)}
+                                alt={drop.title}
+                                className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                            <p className="text-xs font-mono tracking-widest mb-1">{drop.title}</p>
+                            {drop.price && (
+                              <p className="text-xs font-mono text-gray-500">{drop.price}</p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {charmItems.length > 0 && (
+                    <div>
+                      <p className="text-xs font-mono tracking-widest text-gray-400 mb-6 border-t border-black pt-8">CHARM SET</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {charmItems.map(({ image, project }) => (
+                          <button
+                            key={image.id}
+                            onClick={() => setSelectedCharmItem({ image, project })}
+                            className="group text-left"
+                          >
+                            <div className="aspect-square bg-gray-100 border border-black overflow-hidden mb-3">
+                              <img
+                                src={image.image_url}
+                                alt={image.alt_text || image.name || ''}
+                                className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                            {image.name && (
+                              <p className="text-xs font-mono tracking-widest mb-1">{image.name}</p>
+                            )}
+                            {(image.price || project.price) && (
+                              <p className="text-xs font-mono text-gray-500">{image.price || project.price}</p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {waresItems.length > 0 && (
+                    <div>
+                      <p className="text-xs font-mono tracking-widest text-gray-400 mb-6 border-t border-black pt-8">WARES</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        {waresItems.map(({ image, project }) => (
+                          <button
+                            key={image.id}
+                            onClick={() => setSelectedWaresItem({ image, project })}
+                            className="group text-left"
+                          >
+                            <div className="aspect-square border border-black overflow-hidden mb-3">
+                              <img
+                                src={image.image_url}
+                                alt={image.alt_text || image.name || ''}
+                                className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
+                                loading="lazy"
+                              />
+                            </div>
+                            {image.name && (
+                              <p className="text-xs font-mono tracking-widest mb-1">{image.name}</p>
+                            )}
+                            {(image.price || project.price) && (
+                              <p className="text-xs font-mono text-gray-500">{image.price || project.price}</p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           ) : shopSection === 'drops' ? (
             // ── ONE-OF-ONE drops ───────────────────────────────────────────────
             <div className="flex flex-col gap-16">
@@ -414,7 +598,7 @@ const Home = () => {
                 </div>
               )}
             </div>
-          ) : (
+          ) : shopSection === 'charm-set' ? (
             // ── Charm set ──────────────────────────────────────────────────────
             <div className="flex flex-col gap-10">
               {/* Description */}
@@ -467,6 +651,38 @@ const Home = () => {
                 </div>
               ) : (
                 <p className="text-sm font-mono text-gray-400">CHARMS COMING SOON.</p>
+              )}
+            </div>
+          ) : (
+            // ── Wares ──────────────────────────────────────────────────────────
+            <div className="flex flex-col gap-10">
+              {waresItems.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {waresItems.map(({ image, project }) => (
+                    <button
+                      key={image.id}
+                      onClick={() => setSelectedWaresItem({ image, project })}
+                      className="group text-left"
+                    >
+                      <div className="aspect-square border border-black overflow-hidden mb-3">
+                        <img
+                          src={image.image_url}
+                          alt={image.alt_text || image.name || ''}
+                          className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
+                          loading="lazy"
+                        />
+                      </div>
+                      {image.name && (
+                        <p className="text-xs font-mono tracking-widest mb-1">{image.name}</p>
+                      )}
+                      {(image.price || project.price) && (
+                        <p className="text-xs font-mono text-gray-500">{image.price || project.price}</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-mono text-gray-400">WARES COMING SOON.</p>
               )}
             </div>
           )}
