@@ -173,58 +173,62 @@ const Home = () => {
               onClick={() => setSelectedDrop(null)}
             >
               <div
-                className="bg-white max-w-lg w-full mx-4 p-8 relative font-mono overflow-y-auto max-h-[90vh]"
+                className="bg-white max-w-md w-full mx-4 font-mono overflow-y-auto max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
               >
-                <button
-                  onClick={() => setSelectedDrop(null)}
-                  className="absolute top-4 right-4 hover:opacity-60 transition-opacity"
-                >
-                  <X size={18} />
-                </button>
-
-                <div className="aspect-square border border-black overflow-hidden mb-6">
-                  <img
-                    src={getThumbnailForProject(selectedDrop)}
-                    alt={selectedDrop.title}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="flex justify-end px-4 pt-4 pb-2">
+                  <button
+                    onClick={() => setSelectedDrop(null)}
+                    className="hover:opacity-60 transition-opacity"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
 
-                <h2 className="text-lg tracking-widest mb-1">{selectedDrop.title}</h2>
-                <p className="text-xs text-gray-400 tracking-widest mb-4">{selectedDrop.year}</p>
-
-                {selectedDrop.description && (
-                  <div className="text-xs leading-relaxed text-gray-600 mb-6">
-                    <MarkdownRenderer content={selectedDrop.description} />
+                <div className="px-8 pb-8">
+                  <div className="aspect-square border border-black overflow-hidden mb-6">
+                    <img
+                      src={getThumbnailForProject(selectedDrop)}
+                      alt={selectedDrop.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                )}
 
-                {selectedDrop.price && (
-                  <p className="text-base tracking-wide mb-6">{selectedDrop.price}</p>
-                )}
+                  <h2 className="text-sm tracking-widest mb-1">{selectedDrop.title}</h2>
+                  <p className="text-xs text-gray-400 tracking-widest mb-4">{selectedDrop.year}</p>
 
-                {selectedDrop.images?.some(img => img.shopify_variant_id) ? (
-                  <button
-                    onClick={() => handleAddDropToCart(selectedDrop)}
-                    className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
-                      addedId === selectedDrop.id
-                        ? 'bg-black text-white border-black'
-                        : 'border-black hover:bg-black hover:text-white'
-                    }`}
-                  >
-                    <ShoppingCart size={14} />
-                    {addedId === selectedDrop.id ? 'ADDED ✓' : 'ADD TO CART'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEmailDrop(selectedDrop)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
-                  >
-                    <ShoppingBag size={14} />
-                    ENQUIRE
-                  </button>
-                )}
+                  {selectedDrop.description && (
+                    <div className="text-xs text-gray-600 leading-relaxed mb-4">
+                      <MarkdownRenderer content={selectedDrop.description} />
+                    </div>
+                  )}
+
+                  {selectedDrop.price && (
+                    <p className="text-base tracking-wide mb-6">{selectedDrop.price}</p>
+                  )}
+
+                  {selectedDrop.images?.some(img => img.shopify_variant_id) ? (
+                    <button
+                      onClick={() => handleAddDropToCart(selectedDrop)}
+                      className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
+                        addedId === selectedDrop.id
+                          ? 'bg-black text-white border-black'
+                          : 'border-black hover:bg-black hover:text-white'
+                      }`}
+                    >
+                      <ShoppingCart size={14} />
+                      {addedId === selectedDrop.id ? 'ADDED ✓' : 'ADD TO CART'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleEmailDrop(selectedDrop)}
+                      className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                    >
+                      <ShoppingBag size={14} />
+                      ENQUIRE
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -236,7 +240,7 @@ const Home = () => {
               onClick={() => setSelectedWaresItem(null)}
             >
               <div
-                className="bg-white max-w-md w-full mx-4 font-mono"
+                className="bg-white max-w-md w-full mx-4 font-mono overflow-y-auto max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex justify-end px-4 pt-4 pb-2">
@@ -249,49 +253,49 @@ const Home = () => {
                 </div>
 
                 <div className="px-8 pb-8">
-                <div className="aspect-square border border-black overflow-hidden mb-6">
-                  <img
-                    src={selectedWaresItem.image.image_url}
-                    alt={selectedWaresItem.image.alt_text || selectedWaresItem.image.name || ''}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {selectedWaresItem.image.name && (
-                  <h2 className="text-sm tracking-widest mb-3">{selectedWaresItem.image.name}</h2>
-                )}
-                {selectedWaresItem.project.description && (
-                  <div className="text-xs text-gray-600 leading-relaxed mb-4">
-                    <MarkdownRenderer content={selectedWaresItem.project.description} />
+                  <div className="aspect-square border border-black overflow-hidden mb-6">
+                    <img
+                      src={selectedWaresItem.image.image_url}
+                      alt={selectedWaresItem.image.alt_text || selectedWaresItem.image.name || ''}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                )}
-                {(selectedWaresItem.image.price || selectedWaresItem.project.price) && (
-                  <p className="text-base tracking-wide mb-6">
-                    {selectedWaresItem.image.price || selectedWaresItem.project.price}
-                  </p>
-                )}
 
-                {selectedWaresItem.image.shopify_variant_id ? (
-                  <button
-                    onClick={() => handleAddCharmToCart(selectedWaresItem)}
-                    className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
-                      addedId === selectedWaresItem.image.id
-                        ? 'bg-black text-white border-black'
-                        : 'border-black hover:bg-black hover:text-white'
-                    }`}
-                  >
-                    <ShoppingCart size={14} />
-                    {addedId === selectedWaresItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEmailCharm(selectedWaresItem)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
-                  >
-                    <ShoppingBag size={14} />
-                    ENQUIRE
-                  </button>
-                )}
+                  {selectedWaresItem.image.name && (
+                    <h2 className="text-sm tracking-widest mb-3">{selectedWaresItem.image.name}</h2>
+                  )}
+                  {selectedWaresItem.project.description && (
+                    <div className="text-xs text-gray-600 leading-relaxed mb-4">
+                      <MarkdownRenderer content={selectedWaresItem.project.description} />
+                    </div>
+                  )}
+                  {(selectedWaresItem.image.price || selectedWaresItem.project.price) && (
+                    <p className="text-base tracking-wide mb-6">
+                      {selectedWaresItem.image.price || selectedWaresItem.project.price}
+                    </p>
+                  )}
+
+                  {selectedWaresItem.image.shopify_variant_id ? (
+                    <button
+                      onClick={() => handleAddCharmToCart(selectedWaresItem)}
+                      className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
+                        addedId === selectedWaresItem.image.id
+                          ? 'bg-black text-white border-black'
+                          : 'border-black hover:bg-black hover:text-white'
+                      }`}
+                    >
+                      <ShoppingCart size={14} />
+                      {addedId === selectedWaresItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleEmailCharm(selectedWaresItem)}
+                      className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                    >
+                      <ShoppingBag size={14} />
+                      ENQUIRE
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -304,57 +308,63 @@ const Home = () => {
               onClick={() => setSelectedCharmItem(null)}
             >
               <div
-                className="bg-white max-w-md w-full mx-4 p-8 relative font-mono"
+                className="bg-white max-w-md w-full mx-4 font-mono overflow-y-auto max-h-[90vh]"
                 onClick={e => e.stopPropagation()}
               >
-                <button
-                  onClick={() => setSelectedCharmItem(null)}
-                  className="absolute top-4 right-4 hover:opacity-60 transition-opacity"
-                >
-                  <X size={18} />
-                </button>
-
-                <div className="aspect-square border border-black overflow-hidden mb-6">
-                  <img
-                    src={selectedCharmItem.image.image_url}
-                    alt={selectedCharmItem.image.alt_text || selectedCharmItem.image.name || ''}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="flex justify-end px-4 pt-4 pb-2">
+                  <button
+                    onClick={() => setSelectedCharmItem(null)}
+                    className="hover:opacity-60 transition-opacity"
+                  >
+                    <X size={18} />
+                  </button>
                 </div>
 
-                {selectedCharmItem.image.name && (
-                  <h2 className="text-sm tracking-widest mb-3">{selectedCharmItem.image.name}</h2>
-                )}
-                {selectedCharmItem.image.alt_text && (
-                  <p className="text-xs text-gray-600 leading-relaxed mb-4">{selectedCharmItem.image.alt_text}</p>
-                )}
-                {(selectedCharmItem.image.price || selectedCharmItem.project.price) && (
-                  <p className="text-base tracking-wide mb-6">
-                    {selectedCharmItem.image.price || selectedCharmItem.project.price}
-                  </p>
-                )}
+                <div className="px-8 pb-8">
+                  <div className="aspect-square border border-black overflow-hidden mb-6">
+                    <img
+                      src={selectedCharmItem.image.image_url}
+                      alt={selectedCharmItem.image.alt_text || selectedCharmItem.image.name || ''}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                {selectedCharmItem.image.shopify_variant_id ? (
-                  <button
-                    onClick={() => handleAddCharmToCart(selectedCharmItem)}
-                    className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
-                      addedId === selectedCharmItem.image.id
-                        ? 'bg-black text-white border-black'
-                        : 'border-black hover:bg-black hover:text-white'
-                    }`}
-                  >
-                    <ShoppingCart size={14} />
-                    {addedId === selectedCharmItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEmailCharm(selectedCharmItem)}
-                    className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
-                  >
-                    <ShoppingBag size={14} />
-                    ENQUIRE
-                  </button>
-                )}
+                  {selectedCharmItem.image.name && (
+                    <h2 className="text-sm tracking-widest mb-3">{selectedCharmItem.image.name}</h2>
+                  )}
+                  {selectedCharmItem.image.alt_text && (
+                    <div className="text-xs text-gray-600 leading-relaxed mb-4">
+                      <MarkdownRenderer content={selectedCharmItem.image.alt_text} />
+                    </div>
+                  )}
+                  {(selectedCharmItem.image.price || selectedCharmItem.project.price) && (
+                    <p className="text-base tracking-wide mb-6">
+                      {selectedCharmItem.image.price || selectedCharmItem.project.price}
+                    </p>
+                  )}
+
+                  {selectedCharmItem.image.shopify_variant_id ? (
+                    <button
+                      onClick={() => handleAddCharmToCart(selectedCharmItem)}
+                      className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
+                        addedId === selectedCharmItem.image.id
+                          ? 'bg-black text-white border-black'
+                          : 'border-black hover:bg-black hover:text-white'
+                      }`}
+                    >
+                      <ShoppingCart size={14} />
+                      {addedId === selectedCharmItem.image.id ? 'ADDED ✓' : 'ADD TO CART'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleEmailCharm(selectedCharmItem)}
+                      className="w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border border-black hover:bg-black hover:text-white transition-colors duration-300"
+                    >
+                      <ShoppingBag size={14} />
+                      ENQUIRE
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
