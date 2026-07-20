@@ -17,6 +17,9 @@ import ShopProject from './pages/ShopProject';
 import AdminEnhanced from './pages/AdminEnhanced';
 import ResetPassword from './pages/ResetPassword';
 import Collaborate from './pages/Collaborate';
+import Community from './pages/Community';
+import FiftyTwoHands from './pages/FiftyTwoHands';
+import NFTCanvas from './pages/NFTCanvas';
 
 // Detects Supabase recovery tokens in the URL hash and redirects to /reset-password
 const AuthRedirectHandler = () => {
@@ -50,6 +53,9 @@ function App() {
               <Route path="/shop" element={<Shop />} />
               <Route path="/shop/:slug" element={<ShopProject />} />
               <Route path="/collaborate" element={<Collaborate />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/community/52-hands" element={<FiftyTwoHands />} />
+              <Route path="/community/nft-canvas" element={<NFTCanvas />} />
 
               <Route path="/admin" element={<AdminEnhanced />} />
               <Route path="/reset-password" element={<ResetPassword />} />

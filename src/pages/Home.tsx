@@ -104,10 +104,10 @@ const Home = () => {
 
   // Add a drop (art piece) to cart
   const handleAddDropToCart = useCallback((drop: Project) => {
-    const variant = drop.images?.find(img => img.shopify_variant_id);
-    if (!variant?.shopify_variant_id) return;
+    const purchasable = drop.images?.find(img => img.razorpay_amount);
+    if (!purchasable?.razorpay_amount) return;
     addItem({
-      variantId: variant.shopify_variant_id,
+      imageId: purchasable.id,
       name: drop.title,
       price: drop.price || '',
       imageUrl: getThumbnailForProject(drop),
@@ -126,9 +126,9 @@ const Home = () => {
 
   // Add a charm to cart
   const handleAddCharmToCart = useCallback((item: ShopItem) => {
-    if (!item.image.shopify_variant_id) return;
+    if (!item.image.razorpay_amount) return;
     addItem({
-      variantId: item.image.shopify_variant_id,
+      imageId: item.image.id,
       name: item.image.name || item.project.title,
       price: item.image.price || item.project.price || '',
       imageUrl: item.image.image_url,
@@ -158,10 +158,10 @@ const Home = () => {
       const currentDrop = artDrops[0] || null;
       const pastDrops = artDrops.slice(1);
       const charmItems: ShopItem[] = (charmProject?.images || [])
-        .filter(img => img.name || img.price || img.shopify_variant_id)
+        .filter(img => img.name || img.price || img.razorpay_amount)
         .map(img => ({ image: img, project: charmProject! }));
       const waresItems: ShopItem[] = (waresProject?.images || [])
-        .filter(img => img.name || img.price || img.shopify_variant_id)
+        .filter(img => img.name || img.price || img.razorpay_amount)
         .map(img => ({ image: img, project: waresProject! }));
 
       return (
@@ -207,7 +207,7 @@ const Home = () => {
                     <p className="text-base tracking-wide mb-6">{selectedDrop.price}</p>
                   )}
 
-                  {selectedDrop.images?.some(img => img.shopify_variant_id) ? (
+                  {selectedDrop.images?.some(img => img.razorpay_amount) ? (
                     <button
                       onClick={() => handleAddDropToCart(selectedDrop)}
                       className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
@@ -275,7 +275,7 @@ const Home = () => {
                     </p>
                   )}
 
-                  {selectedWaresItem.image.shopify_variant_id ? (
+                  {selectedWaresItem.image.razorpay_amount ? (
                     <button
                       onClick={() => handleAddCharmToCart(selectedWaresItem)}
                       className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
@@ -343,7 +343,7 @@ const Home = () => {
                     </p>
                   )}
 
-                  {selectedCharmItem.image.shopify_variant_id ? (
+                  {selectedCharmItem.image.razorpay_amount ? (
                     <button
                       onClick={() => handleAddCharmToCart(selectedCharmItem)}
                       className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${
@@ -545,7 +545,7 @@ const Home = () => {
                       {currentDrop.price && (
                         <p className="text-base font-mono tracking-wide">{currentDrop.price}</p>
                       )}
-                      {currentDrop.images?.some(img => img.shopify_variant_id) ? (
+                      {currentDrop.images?.some(img => img.razorpay_amount) ? (
                         <button
                           onClick={() => handleAddDropToCart(currentDrop)}
                           className={`flex items-center justify-center gap-2 text-xs font-mono tracking-widest py-4 border transition-colors duration-300 ${
@@ -985,6 +985,12 @@ const Home = () => {
               {category.name}
             </button>
           ))}
+          <Link
+            to="/community"
+            className="text-left text-lg font-mono tracking-widest border border-black px-6 py-4 hover:bg-black hover:text-white transition-colors duration-300"
+          >
+            COMMUNITY
+          </Link>
         </div>
         <div className="hidden lg:block w-full h-full">
           <VineCursorCanvas />
@@ -1040,6 +1046,13 @@ const Home = () => {
                       {category.name}
                     </button>
                   ))}
+                  <Link
+                    to="/community"
+                    onClick={() => setShowCategoryDropdown(false)}
+                    className="block w-full text-left px-4 py-2 text-sm font-mono hover:bg-black hover:text-white transition-colors"
+                  >
+                    COMMUNITY
+                  </Link>
                 </div>
               )}
             </div>
@@ -1160,6 +1173,12 @@ const Home = () => {
                   {category.name}
                 </button>
               ))}
+              <Link
+                to="/community"
+                className="text-left text-xl font-mono tracking-widest border border-black px-6 py-4 transition-colors duration-300 hover:bg-black hover:text-white"
+              >
+                COMMUNITY
+              </Link>
             </nav>
           </div>
 

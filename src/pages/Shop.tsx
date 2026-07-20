@@ -24,7 +24,7 @@ const Shop: React.FC = () => {
         const flat: ShopItem[] = [];
         for (const project of projects) {
           for (const image of project.images || []) {
-            if (image.name || image.price || image.shopify_variant_id) {
+            if (image.name || image.price || image.razorpay_amount) {
               flat.push({ image, project });
             }
           }
@@ -36,9 +36,9 @@ const Shop: React.FC = () => {
   }, []);
 
   const handleAddToCart = (item: ShopItem) => {
-    if (!item.image.shopify_variant_id) return;
+    if (!item.image.razorpay_amount) return;
     addItem({
-      variantId: item.image.shopify_variant_id,
+      imageId: item.image.id,
       name: item.image.name || item.project.title,
       price: item.image.price || item.project.price || '',
       imageUrl: item.image.image_url,
@@ -107,7 +107,7 @@ const Shop: React.FC = () => {
               </p>
             )}
 
-            {selectedItem.image.shopify_variant_id ? (
+            {selectedItem.image.razorpay_amount ? (
               <button
                 onClick={() => handleAddToCart(selectedItem)}
                 className={`w-full flex items-center justify-center gap-2 text-xs tracking-widest py-4 border transition-colors duration-300 ${

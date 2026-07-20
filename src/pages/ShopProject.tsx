@@ -24,10 +24,10 @@ const ShopProject: React.FC = () => {
   }, [slug]);
 
   const handleAddToCart = (img: NonNullable<Project['images']>[number]) => {
-    if (!img.shopify_variant_id) return;
+    if (!img.razorpay_amount) return;
 
     addItem({
-      variantId: img.shopify_variant_id,
+      imageId: img.id,
       name: img.name || project?.title || 'Item',
       price: img.price || project?.price || '',
       imageUrl: img.image_url,
@@ -74,7 +74,7 @@ const ShopProject: React.FC = () => {
   }
 
   const purchasableImages =
-    project.images?.filter(img => img.name || img.price || img.shopify_variant_id) || [];
+    project.images?.filter(img => img.name || img.price || img.razorpay_amount) || [];
 
   const galleryImages = project.images || [];
   const displayImage = galleryImages[selectedImage] ?? galleryImages[0];
@@ -206,7 +206,7 @@ const ShopProject: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
                 {purchasableImages.map(img => {
-                  const canBuy = !!(img.shopify_variant_id);
+                  const canBuy = !!(img.razorpay_amount);
                   const justAdded = addedIds.has(img.id);
                   const itemPrice = img.price || project.price;
 

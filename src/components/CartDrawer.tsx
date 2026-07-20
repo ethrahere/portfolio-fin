@@ -3,7 +3,7 @@ import { X, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 
 const CartDrawer: React.FC = () => {
-  const { items, isOpen, itemCount, closeCart, removeItem, checkout, checkingOut, shopifyReady } = useCart();
+  const { items, isOpen, itemCount, closeCart, removeItem, checkout, checkingOut, razorpayReady } = useCart();
 
   return (
     <>
@@ -71,7 +71,7 @@ const CartDrawer: React.FC = () => {
               {checkingOut ? 'REDIRECTING...' : 'CHECKOUT'}
             </button>
             <p className="text-xs font-mono text-gray-400 text-center">
-              {shopifyReady ? 'Secure checkout via Shopify' : 'Opens email enquiry'}
+              {razorpayReady ? 'Secure checkout via Razorpay' : 'Opens email enquiry'}
             </p>
           </div>
         )}

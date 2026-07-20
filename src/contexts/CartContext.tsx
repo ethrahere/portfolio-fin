@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { shopifyConfigured, createShopifyCart } from '../lib/shopify';
+import { razorpayConfigured, loadRazorpayScript, openRazorpayCheckout } from '../lib/razorpay';
 
 export interface CartItem {
   id: string;
-  variantId: string;
+  imageId: string;
   name: string;
   price: string;
   imageUrl?: string;
@@ -14,7 +14,7 @@ interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   itemCount: number;
-  shopifyReady: boolean;
+  razorpayReady: boolean;
   checkingOut: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -32,10 +32,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addItem = useCallback((item: Omit<CartItem, 'id' | 'quantity'>) => {
     setItems(prev => {
-      const existing = prev.find(i => i.variantId === item.variantId);
+      const existing = prev.find(i => i.imageId === item.imageId);
       if (existing) {
         return prev.map(i =>
-          i.variantId === item.variantId ? { ...i, quantity: i.quantity + 1 } : i
+          i.imageId === item.imageId ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
       return [...prev, { ...item, id: crypto.randomUUID(), quantity: 1 }];
@@ -50,7 +50,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkout = useCallback(async () => {
     if (items.length === 0) return;
 
-    if (!shopifyConfigured) {
+    if (!razorpayConfigured) {
       const body = items
         .map(i => `${i.name} x${i.quantity} — ${i.price}`)
         .join('\n');
@@ -60,15 +60,58 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setCheckingOut(true);
     try {
-      const cart = await createShopifyCart(
-        items.map(i => ({ variantId: i.variantId, quantity: i.quantity }))
-      );
-      window.location.href = cart.checkoutUrl;
+      const orderRes = await fetch('/api/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({ imageId: i.imageId, quantity: i.quantity })),
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error('Could not load Razorpay checkout');
+
+      openRazorpayCheckout({
+        key: orderData.keyId,
+        order_id: orderData.orderId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'ETHRA',
+        description: items.map(i => `${i.name} x${i.quantity}`).join(', '),
+        theme: { color: '#000000' },
+        handler: async response => {
+          try {
+            const verifyRes = await fetch('/api/verify-razorpay-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.verified) {
+              setItems([]);
+              setIsOpen(false);
+              alert('Payment successful! Thank you for your purchase.');
+            } else {
+              alert('Payment could not be verified. Please email ethra.here@gmail.com with your payment ID.');
+            }
+          } finally {
+            setCheckingOut(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setCheckingOut(false),
+        },
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       console.error('Checkout error:', msg);
       alert(`Checkout failed: ${msg}\n\nPlease email ethra.here@gmail.com to purchase.`);
-    } finally {
       setCheckingOut(false);
     }
   }, [items]);
@@ -79,7 +122,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         items,
         isOpen,
         itemCount: items.reduce((s, i) => s + i.quantity, 0),
-        shopifyReady: shopifyConfigured,
+        razorpayReady: razorpayConfigured,
         checkingOut,
         openCart: () => setIsOpen(true),
         closeCart: () => setIsOpen(false),

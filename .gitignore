@@ -36,3 +36,4 @@ debug-*.js
 test-*.js
 SUPABASE_SETUP.md
 SUPABASE_AUTH_SETUP.md
+.vercel

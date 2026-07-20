@@ -485,7 +485,7 @@ const AdminEnhanced = () => {
                         <div>
                           <span className="text-sm font-mono">SHOW IN SHOP</span>
                           <p className="text-xs text-gray-500 font-mono mt-0.5">
-                            Makes this project visible at /shop. Add Shopify variant IDs to images below to enable buy buttons.
+                            Makes this project visible at /shop. Add a checkout price to images below to enable buy buttons.
                           </p>
                         </div>
                       </label>

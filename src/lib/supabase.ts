@@ -47,7 +47,7 @@ export interface ProjectImage {
   alt_text: string;
   name?: string;
   price?: string;
-  shopify_variant_id?: string;
+  razorpay_amount?: number;
   display_order: number;
   is_thumbnail: boolean;
   created_at: string;
