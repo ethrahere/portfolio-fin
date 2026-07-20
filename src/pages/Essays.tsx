@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 import { getProjectsByCategory, getThumbnailForProject, Project } from '../lib/supabase';
 
 const Essays = () => {
@@ -82,6 +83,7 @@ const Essays = () => {
       <div className="p-8 md:p-16">
         {/* Header */}
         <header className="mb-16">
+          <BackButton />
           <h1 className="text-3xl md:text-4xl font-mono tracking-wide">
             ESSAYS
           </h1>

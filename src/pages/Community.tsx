@@ -2,12 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 
 const Community = () => {
   return (
     <AppLayout sectionLabel="COMMUNITY">
       <div className="p-8 md:p-16">
         <header className="mb-16">
+          <BackButton />
           <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-4">COMMUNITY</h1>
           <p className="text-sm font-mono text-gray-600 leading-relaxed">
             Collaborative projects that bring artists and communities together.

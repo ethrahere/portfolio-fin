@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingBag, ShoppingCart, X, ChevronRight } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { getShopProjects, getThumbnailForProject, Project, ProjectImage } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
@@ -301,6 +302,7 @@ const Shop: React.FC = () => {
 
         {/* Header */}
         <header className="mb-16">
+          <BackButton />
           <h1 className="text-3xl md:text-4xl font-mono tracking-wide">SHOP</h1>
         </header>
 

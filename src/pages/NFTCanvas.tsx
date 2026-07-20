@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { RotateCcw, Brush, Layers, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -257,6 +258,7 @@ const NFTCanvas = () => {
       <div className="p-8 md:p-16">
         {/* Header */}
         <header className="mb-12">
+          <BackButton />
           <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-4">YOUR CANVAS</h1>
           <p className="text-sm font-mono text-gray-600 leading-relaxed max-w-xl">
             Color the template regions or paint freely on top. Your design becomes a unique NFT

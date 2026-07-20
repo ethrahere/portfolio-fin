@@ -1,6 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { getProjectsByCategory, Project as ProjectType } from '../lib/supabase';
 
@@ -54,6 +55,7 @@ const Bio = () => {
         {/* Bio Content */}
         <div className="space-y-16">
           <header>
+            <BackButton />
             <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-4">
               {bioProject.title}
             </h1>

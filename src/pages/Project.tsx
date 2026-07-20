@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ExternalLink } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -184,6 +185,7 @@ const Project = () => {
         {/* Project Content */}
         <div className="space-y-16">
           <header>
+            <BackButton />
             <h1 className="text-3xl md:text-4xl font-mono tracking-wide mb-4">
               {project.title}
             </h1>

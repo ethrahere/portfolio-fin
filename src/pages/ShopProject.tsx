@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ShoppingBag, ShoppingCart } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 import { getShopProject, Project } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -85,6 +86,8 @@ const ShopProject: React.FC = () => {
       </Helmet>
 
       <div className="p-8 md:p-16">
+
+          <BackButton />
 
           {/* Drop label */}
           <p className="text-xs font-mono tracking-widest text-gray-400 mb-6">

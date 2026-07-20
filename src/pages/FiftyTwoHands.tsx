@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AppLayout from '../components/AppLayout';
+import BackButton from '../components/BackButton';
 
 const TOTAL_SLOTS = 52;
 const FILLED_SLOTS = 0; // Will be driven from DB in a future phase
@@ -25,6 +26,7 @@ const FiftyTwoHands = () => {
     <AppLayout sectionLabel="52 HANDS">
       <div className="p-8 md:p-16">
         <header className="mb-16">
+          <BackButton />
           <div className="flex items-center gap-4 mb-3">
             <h1 className="text-3xl md:text-4xl font-mono tracking-wide">52 HANDS</h1>
             <span className="text-xs font-mono tracking-widest border border-black px-2 py-1 flex-shrink-0">
