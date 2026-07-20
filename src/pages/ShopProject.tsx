@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, ShoppingCart } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 import { getShopProject, Project } from '../lib/supabase';
 import { useCart } from '../contexts/CartContext';
-import CartDrawer from '../components/CartDrawer';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const ShopProject: React.FC = () => {
@@ -13,7 +13,7 @@ const ShopProject: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  const { itemCount, openCart, addItem } = useCart();
+  const { addItem } = useCart();
 
   useEffect(() => {
     if (!slug) return;
@@ -53,23 +53,21 @@ const ShopProject: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="text-sm font-mono">LOADING...</div>
-      </div>
+      <AppLayout sectionLabel="SHOP">
+        <div className="p-8 md:p-16">
+          <div className="text-sm font-mono">LOADING...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <Link
-          to="/shop"
-          className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8"
-        >
-          <ArrowLeft size={16} /> DROPS
-        </Link>
-        <div className="text-sm font-mono text-gray-400">DROP NOT FOUND</div>
-      </div>
+      <AppLayout sectionLabel="SHOP">
+        <div className="p-8 md:p-16">
+          <div className="text-sm font-mono text-gray-400">DROP NOT FOUND</div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -80,39 +78,13 @@ const ShopProject: React.FC = () => {
   const displayImage = galleryImages[selectedImage] ?? galleryImages[0];
 
   return (
-    <>
+    <AppLayout sectionLabel="SHOP">
       <Helmet>
         <title>{project.title} | ETHRA Drops</title>
         <meta name="description" content={project.description?.substring(0, 160)} />
       </Helmet>
 
-      <CartDrawer />
-
-      <div className="min-h-screen text-black bg-white/50 p-8 md:p-16">
-        <div className="max-w-5xl mx-auto">
-
-          {/* Nav bar */}
-          <div className="flex items-center justify-between mb-16">
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline"
-            >
-              <ArrowLeft size={16} />
-              DROPS
-            </Link>
-            <button
-              onClick={openCart}
-              className="relative flex items-center gap-2 border border-black px-4 py-2 font-mono text-sm hover:bg-black hover:text-white transition-colors flex-shrink-0"
-            >
-              <ShoppingBag size={16} />
-              CART
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-black text-white text-xs font-mono w-5 h-5 rounded-full flex items-center justify-center">
-                  {itemCount}
-                </span>
-              )}
-            </button>
-          </div>
+      <div className="p-8 md:p-16">
 
           {/* Drop label */}
           <p className="text-xs font-mono tracking-widest text-gray-400 mb-6">
@@ -275,9 +247,8 @@ const ShopProject: React.FC = () => {
             </div>
           )}
 
-        </div>
       </div>
-    </>
+    </AppLayout>
   );
 };
 

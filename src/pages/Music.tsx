@@ -2,7 +2,7 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 import { getProjectsByCategory, getThumbnailForProject, Project } from '../lib/supabase';
 
 const Music = () => {
@@ -26,11 +26,11 @@ const Music = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
+      <AppLayout sectionLabel="MUSIC">
+        <div className="p-8 md:p-16">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
@@ -39,7 +39,7 @@ const Music = () => {
   const pageUrl = "https://ethra.art/music";
 
   return (
-    <>
+    <AppLayout sectionLabel="MUSIC">
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
@@ -79,52 +79,41 @@ const Music = () => {
         </script>
       </Helmet>
 
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <header className="mb-16">
-            <nav aria-label="Breadcrumb">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-8"
-              >
-                <ArrowLeft size={16} />
-                HOME
-              </Link>
-            </nav>
-            <h1 className="text-3xl md:text-4xl font-mono tracking-wide">
-              MUSIC
-            </h1>
-          </header>
+      <div className="p-8 md:p-16">
+        {/* Header */}
+        <header className="mb-16">
+          <h1 className="text-3xl md:text-4xl font-mono tracking-wide">
+            MUSIC
+          </h1>
+        </header>
 
-          {/* Projects Grid */}
-          <main>
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-16" aria-label="Music projects">
-              {projects.map((project) => (
-                <article key={project.id}>
-                  <Link
-                    to={`/project/music/${project.slug}`}
-                    className="group block"
-                  >
-                    <div className="aspect-square bg-gray-100 border border-black overflow-hidden mb-4 group-hover:bg-black transition-colors duration-300">
-                      <img
-                        src={getThumbnailForProject(project)}
-                        alt={`${project.title} - Music by ETHRA`}
-                        className="w-full h-full object-cover group-hover:opacity-90"
-                        loading="lazy"
-                      />
-                    </div>
-                    <h2 className="text-sm font-mono tracking-widest group-hover:underline">
-                      {project.title}
-                    </h2>
-                  </Link>
-                </article>
-              ))}
-            </section>
-          </main>
-        </div>
+        {/* Projects Grid */}
+        <main>
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-16" aria-label="Music projects">
+            {projects.map((project) => (
+              <article key={project.id}>
+                <Link
+                  to={`/project/music/${project.slug}`}
+                  className="group block"
+                >
+                  <div className="aspect-square bg-gray-100 border border-black overflow-hidden mb-4 group-hover:bg-black transition-colors duration-300">
+                    <img
+                      src={getThumbnailForProject(project)}
+                      alt={`${project.title} - Music by ETHRA`}
+                      className="w-full h-full object-cover group-hover:opacity-90"
+                      loading="lazy"
+                    />
+                  </div>
+                  <h2 className="text-sm font-mono tracking-widest group-hover:underline">
+                    {project.title}
+                  </h2>
+                </Link>
+              </article>
+            ))}
+          </section>
+        </main>
       </div>
-    </>
+    </AppLayout>
   );
 }
 export default Music;

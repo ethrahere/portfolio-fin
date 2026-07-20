@@ -7,7 +7,7 @@ import { useCart } from '../contexts/CartContext';
 const DISCORD_URL = 'https://discord.gg/5kDsbhbF';
 
 const NAV_ITEMS = [
-  { label: 'SHOP', href: '/' },
+  { label: 'SHOP', href: '/shop' },
   { label: '3D', href: '/3d' },
   { label: 'OBJECTS', href: '/objects' },
   { label: 'APPS', href: '/apps' },
@@ -31,7 +31,6 @@ const AppLayout = ({ children, sectionLabel = 'COMMUNITY' }: AppLayoutProps) => 
   const [showContactDropdown, setShowContactDropdown] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === '/') return false; // never highlight SHOP link from sub-pages
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
 
@@ -139,10 +138,21 @@ const AppLayout = ({ children, sectionLabel = 'COMMUNITY' }: AppLayoutProps) => 
         {/* ── Desktop Sidebar ──────────────────────────────────────────────── */}
         <aside className="hidden lg:flex lg:w-[30%] border-r border-black flex-col flex-shrink-0">
           <div className="flex-1 overflow-y-auto p-8 md:p-16">
-            <header className="mb-12">
+            <header className="mb-12 flex items-center justify-between">
               <Link to="/" className="text-2xl md:text-3xl font-mono tracking-wide hover:opacity-70 transition-opacity">
                 ETHRA
               </Link>
+              <button
+                onClick={openCart}
+                className="group flex items-center gap-1 text-sm font-mono border border-black px-3 py-2 hover:bg-black hover:text-white transition-colors"
+              >
+                <ShoppingBag size={14} />
+                {itemCount > 0 && (
+                  <span className="bg-black text-white text-xs font-mono w-4 h-4 rounded-full flex items-center justify-center leading-none group-hover:bg-white group-hover:text-black transition-colors">
+                    {itemCount}
+                  </span>
+                )}
+              </button>
             </header>
 
             <div className="mb-10">

@@ -1,8 +1,9 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 import ImageGallery from '../components/ImageGallery';
 import VideoGallery from '../components/VideoGallery';
 import MarkdownRenderer from '../components/MarkdownRenderer';
@@ -34,28 +35,21 @@ const Project = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
+      <AppLayout sectionLabel={category?.toUpperCase() || 'ETHRA'}>
+        <div className="p-8 md:p-16">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
-          <Link 
-            to={`/${category}`} 
-            className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-16"
-          >
-            <ArrowLeft size={16} />
-            BACK
-          </Link>
+      <AppLayout sectionLabel={category?.toUpperCase() || 'ETHRA'}>
+        <div className="p-8 md:p-16">
           <div className="text-sm font-mono">PROJECT NOT FOUND</div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
@@ -83,7 +77,7 @@ const Project = () => {
   };
 
   return (
-    <>
+    <AppLayout sectionLabel={category?.toUpperCase() || 'ETHRA'}>
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
@@ -185,19 +179,8 @@ const Project = () => {
         </script>
       </Helmet>
 
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
-        <article className="max-w-6xl mx-auto">
-          {/* Back Navigation */}
-          <nav aria-label="Breadcrumb">
-            <Link
-              to={`/${category}`}
-              className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-16"
-            >
-              <ArrowLeft size={16} />
-              BACK
-            </Link>
-          </nav>
-
+      <div className="p-8 md:p-16">
+        <article>
         {/* Project Content */}
         <div className="space-y-16">
           <header>
@@ -371,7 +354,7 @@ const Project = () => {
         </div>
         </article>
       </div>
-    </>
+    </AppLayout>
   );
 };
 

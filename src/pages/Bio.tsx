@@ -1,7 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { getProjectsByCategory, Project as ProjectType } from '../lib/supabase';
 
@@ -29,45 +28,29 @@ const Bio = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
+      <AppLayout sectionLabel="BIO">
+        <div className="p-8 md:p-16">
           <div className="text-sm font-mono">LOADING...</div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (!bioProject) {
     return (
-      <div className="min-h-screen text-black p-8 md:p-16 bg-white/50">
-        <div className="max-w-6xl mx-auto">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-16"
-          >
-            <ArrowLeft size={16} />
-            HOME
-          </Link>
+      <AppLayout sectionLabel="BIO">
+        <div className="p-8 md:p-16">
           <div className="text-sm font-mono">BIO CONTENT NOT FOUND. PLEASE ADD VIA ADMIN PANEL.</div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   const bioImages = bioProject.images?.map(img => img.image_url) || [];
 
   return (
-    <div className="min-h-screen text-black p-8 md:p-16 bg-white/50 backdrop-blur-sm">
-      <div className="max-w-4xl mx-auto">
-        {/* Back Navigation */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm font-mono underline hover:no-underline mb-16"
-        >
-          <ArrowLeft size={16} />
-          HOME
-        </Link>
-
+    <AppLayout sectionLabel="BIO">
+      <div className="p-8 md:p-16 max-w-4xl">
         {/* Bio Content */}
         <div className="space-y-16">
           <header>
@@ -100,7 +83,7 @@ const Bio = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
